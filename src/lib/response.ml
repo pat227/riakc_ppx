@@ -37,7 +37,7 @@ let parse_mc s =
   try 
     let payload = Bitstring.takebits (Bitstring.bitstring_length bits) bits in
       Result.Ok (Core.Std.Char.of_string (Bitstring.string_of_bitstring mc), payload)
-  with _ ->
+  with _ -> (*let _ = printf "\nresponse.ml::parse_mc -> Incomplete payload" in*)
       Result.Error `Incomplete_payload
  
 
@@ -50,7 +50,7 @@ let run mc mc_payload f =
       let r = f decoder in
       Result.Ok r
     end
-    | (p_mc, payload) -> print_string ("payload error: " ^ (Bitstring.string_of_bitstring payload)); 
+    | (p_mc, payload) -> print_string ("response.ml::run -> payload error: " ^ (Bitstring.string_of_bitstring payload)); 
       Result.Error `Bad_payload
 
 
