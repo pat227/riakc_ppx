@@ -493,9 +493,9 @@ module Make_with_usermeta_index_raw_key
       serialized_key
     >>| function
       | Result.Ok () ->
- Result.Ok ()
+	 Result.Ok ()
       | Result.Error err ->
-   Result.Error err
+	 Result.Error err
   let purge cache = Conn.purge cache.conn cache.bucket
    >>| function
      | Result.Ok () -> Result.Ok ()

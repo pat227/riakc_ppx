@@ -7,7 +7,8 @@ module Rconn = Riakc.Conn
 open Deferred.Result.Monad_infix
 
 module String = Cache.String
-module StringCache = Caches.StringCache
+(*module StringCache = Caches.StringCache*)
+module StrCache = Caches.RawStringKeyCache 
 (*module StringCache = Caches.StringPrimitiveCache;;*)
 module State = struct
   type t = unit
@@ -88,12 +89,12 @@ let string_of_pb_encoded_r (r : Conflicted.recordt) =
 
 let recordt_of_pb pb =
   Protobuf.Decoder.of_string pb |> Conflicted.recordt_from_protobuf;;
-  
+
 let exec_update c updated_robj =
-  let module R = StringCache.Robj in
+  let module R = StrCache.Robj in
   let open Opts.Put in 
   let opts = [Bucket_type "siblings_allowed"] in
-  StringCache.put c ~opts ~k:testkey updated_robj >>|
+  StrCache.put c ~opts ~k:testkey updated_robj >>|
     (fun x -> match x with
 		(robj, (Some key)) -> ()
 	      | (robj, None) -> ())
@@ -101,17 +102,17 @@ let exec_update c updated_robj =
 let exec_get c k =
   let open Opts.Get in
   let opts = [BucketType "siblings_allowed"] in
-  StringCache.get c ~opts k;;
+  StrCache.get c ~opts k;;
 
 let rec rlist_from_content_list accum contentlist =
-  let module R = StringCache.Robj in
+  let module R = StrCache.Robj in
   match contentlist with
     [] -> accum
   | h::t -> rlist_from_content_list ((recordt_of_pb (R.Content.value h))::accum) t
   
 let get_and_resolve_conflicts c =
-  let module R = StringCache.Robj in
-  let module C = StringCache.Robj.Content in
+  let module R = StrCache.Robj in
+  let module C = StrCache.Robj.Content in
   let open Opts.Get in
   let open Response in
   let open Conflicted in
@@ -142,7 +143,7 @@ let get_and_resolve_conflicts c =
 (*This works. Just needed to use Time.pause not Unix.sleep*)
 let resolve_test c =
   let open Opts.Put in
-  let module Robj = StringCache.Robj in
+  let module Robj = StrCache.Robj in
   let open Conflicted in
   let opts = [Bucket_type "siblings_allowed"] in 
   let r1 = { a="first"; b=1; c=Green } in
@@ -153,9 +154,9 @@ let resolve_test c =
   let robj2 = Robj.create (Robj.Content.create r2aspb) in
   let key = testkey in
   let span = Core.Std.Time.Span.of_int_sec 4 in 
-  StringCache.put c ~opts ~k:key robj >>=
+  StrCache.put c ~opts ~k:key robj >>=
     fun _ -> (let _ = printf "\nFirst put done..." in let _ = Core.Std.Time.pause span in Deferred.return(Ok ())) >>=
-    fun _ -> StringCache.put c ~opts ~k:key robj2 >>=
+    fun _ -> StrCache.put c ~opts ~k:key robj2 >>=
     fun _ -> (let _ = printf "\nSecond put done..." in  let _ = Core.Std.Time.pause span in Deferred.return(Ok ())) >>=
     fun _ -> let _ = printf "\nGetting key with siblings..." in get_and_resolve_conflicts c >>=
     fun _ -> exec_get c testkey >>=
@@ -173,31 +174,31 @@ let resolve_test c =
 (*Do 2 puts*)
 let resolve_test_firstput c =
   let open Opts.Put in
-  let module Robj = StringCache.Robj in
+  let module Robj = StrCache.Robj in
   let open Conflicted in
   let opts = [Bucket_type "siblings_allowed"] in 
   let r1 = { a="first"; b=1; c=Green } in
   let r1aspb = string_of_pb_encoded_r r1 in
   let robj = Robj.create (Robj.Content.create r1aspb) in
   let key = testkey in
-  StringCache.put c ~opts ~k:key robj >>=
+  StrCache.put c ~opts ~k:key robj >>=
     fun _ -> (let _ = printf "\nFirst put done..." in Core.Std.Unix.sleep 6; Deferred.return(Ok ()))
 
 let resolve_test_secondput c =
   let open Opts.Put in
-  let module Robj = StringCache.Robj in
+  let module Robj = StrCache.Robj in
   let open Conflicted in
   let opts = [Bucket_type "siblings_allowed"] in 
   let r2 = { a="second"; b=20; c=Red } in
   let r2aspb = string_of_pb_encoded_r r2 in
   let robj2 = Robj.create (Robj.Content.create r2aspb) in
   let key = testkey in
-  StringCache.put c ~opts ~k:key robj2 >>=
+  StrCache.put c ~opts ~k:key robj2 >>=
     fun _ -> (let _ = printf "\nSecond put done..." in Core.Std.Unix.sleep 6; Deferred.return(Ok ()))
 
 let get_resolve_put_test c =
-  let module R = StringCache.Robj in
-  let module C = StringCache.Robj.Content in
+  let module R = StrCache.Robj in
+  let module C = StrCache.Robj.Content in
   let open Opts.Get in
   let open Response in
   let open Conflicted in
@@ -245,7 +246,7 @@ let tests = [ ("resolve_test"           , resolve_test)]
 
 let execute_test t =
   let with_cache () =
-    StringCache.with_cache
+    StrCache.with_cache
       ~host:"127.0.0.1"
       ~port:8087
       ~bucket:"with_sibs"

@@ -110,9 +110,9 @@ let index_search ~stream idx_s () =
   in
   let determine_min idx_s =
     match idx_s.query_type with
-      | Query.Range_int { Query.min = min_i } ->
+      | Query.Range_int { Query.min = min_i;_ } ->
 	Some (Core.Std.Int.to_string min_i)
-      | Query.Range_string { Query.min = min_s } ->
+      | Query.Range_string { Query.min = min_s;_ } ->
 	Some min_s
       | Query.Eq_int _
       | Query.Eq_string _ ->
@@ -120,9 +120,9 @@ let index_search ~stream idx_s () =
   in
   let determine_max idx_s =
     match idx_s.query_type with
-      | Query.Range_int { Query.max = max_i } ->
+      | Query.Range_int { Query.max = max_i;_ } ->
 	Some (Core.Std.Int.to_string max_i)
-      | Query.Range_string { Query.max = max_s } ->
+      | Query.Range_string { Query.max = max_s;_ } ->
 	Some max_s
       | Query.Eq_int _
       | Query.Eq_string _ ->
