@@ -1,5 +1,6 @@
 open Core.Std
 open Lwt
+module Lwt_io = Lwt_io
 module String = Core.Std.String
 
 type t = { r : Lwt_io.input_channel
