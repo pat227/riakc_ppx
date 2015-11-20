@@ -56,7 +56,34 @@ let do_request_stream t accum g f =
        Lwt_io.write t.w request;
        read_response t.r f accum
     | Error _ -> Lwt.return(Error `Bad_conn) (*IMPOSSIBLE--see request.ml...cannot fail*)
-		
+(*These alternatives are required; more closely resembles original version written under
+async. Support client code passing a pipe directly to these functions, upon which we 
+push and write into it, returning unit.*)
+let rec read_response_write_it r f c =
+  let preamble = Bytes.create 4 in
+  read_str r 0 4 preamble >>=
+    function
+    | Ok pre -> read_payload r pre >>=
+		  (function
+		    | Ok pay_load -> Lwt.return (f (Bytes.to_string pay_load)) >>=
+				       (function
+					 | Ok (Response.More resp) ->
+					    c resp >>= fun () -> read_response_write_it r f c
+					 | Ok (Response.Done resp) ->
+					    c resp >>= fun () -> 
+					    Lwt.return (Ok ())
+					 | Error _ -> Lwt.fail_with "Failed to parse response."
+				       )		    
+		    | Error err -> Lwt.fail_with "Could not read payload."
+		  )
+    | Error err -> Lwt.fail_with "Could not read preamble."
+let do_request_stream_side_effect_on_pipe t c g f =
+  Lwt.return (g ()) >>=
+    function
+    | Ok (request) ->
+       Lwt_io.write t.w request;
+       read_response_write_it t.r f c
+    | Error _ -> Lwt.return(Error `Bad_conn) (*IMPOSSIBLE--see request.ml...cannot fail*)
 (*
 Appears async pipes delimit inputs internally by means of a queue? And lwt pipes
 do not? How are we going to get back list of inputs if it all runs together?
@@ -172,9 +199,8 @@ let list_buckets t =
     | Error err ->
       Error err
 
-
 let list_keys_stream t bucket consumer =
-  do_request_stream
+  do_request_stream_side_effect_on_pipe
     t
     consumer
     (Request.list_keys bucket)

@@ -25,7 +25,7 @@ LIB_NAME = $(PROJECT)
 LIB_DESCRIPTION = Riak client with ppx integration.
 LIB_MODULES[] =
   $(removesuffix $(basename $(ls src/lib/*.ml)))
-LIB_PACKAGES = core async async_unix ppx_deriving ppx_deriving_protobuf ppx_deriving.show ppx_deriving_protobuf.runtime bitstring
+LIB_PACKAGES = core lwt async async_unix ppx_deriving ppx_deriving_protobuf ppx_deriving.show ppx_deriving_protobuf.runtime bitstring
 
 EXAMPLES[] =
   $(removesuffix $(basename $(ls src/examples/*.ml)))
