@@ -122,7 +122,7 @@ let connect ~host ~port =
 	       | Error err -> Error err
 
 let close t =
-  Lwt_io.close t.w >>= fun () ->
+  Lwt.join [Lwt_io.close t.r; Lwt_io.close t.w] >>= fun () ->
   Lwt.return (Ok ())
 
 let with_conn ~host ~port f =

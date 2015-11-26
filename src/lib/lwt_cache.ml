@@ -243,10 +243,10 @@ module Make_with_usermeta_index_raw_key
 			 
   let serialize_key = Key.to_string 
   let serialize_value = Protobuf_capable.serialize_proto Value.to_protobuf 
-					
+
   let deserialize_key = Key.of_string
   let deserialize_value = Protobuf_capable.deserialize_proto Value.from_protobuf
-					    
+
   type conn = Lwt_conn.t 
   type t = {conn:conn;bucket:string} 
 	     

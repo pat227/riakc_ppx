@@ -1,11 +1,9 @@
-module Conn = Conn
-(*module Lwt_Conn = Lwt_conn
-module Lwt_io = Lwt_io*)
+module Lwt_Conn = Lwt_conn
+module Lwt_io = Lwt_io
 module Opts = Opts
 module Request = Request
 module Response = Response
 module Robj = Robj
 module type Key = sig include Protobuf_capable.S end
 module type Value = sig include Protobuf_capable.S end
-module Cache = Cache
-		 (*module Lwt_Cache = Lwt_cache*)
+module Lwt_Cache = Lwt_cache
