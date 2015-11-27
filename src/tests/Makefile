@@ -19,3 +19,7 @@ clean:
 #ocamlfind ocamlc -g -principal lwt_conn.mli lwt_conn.ml protobuf_capable.ml protobuf_capables.ml robj.ml lwt_cache.ml lwt_riakc.ml lwt_all_tests.ml -linkpkg -thread -I ../lib/ -package lwt,core,ppx_tools,ppx_deriving_protobuf,ppx_deriving.show
 
 #ocamlfind ocamlc -g -principal robj.ml response.ml opts.ml request.ml lwt_conn.mli lwt_conn.ml protobuf_capable.ml protobuf_capables.ml lwt_cache.ml lwt_riakc.ml lwt_all_tests.ml -linkpkg -thread -I ../lib/ -package lwt,lwt.unix,bitstring,core,ppx_tools,ppx_deriving_protobuf,ppx_deriving.show
+
+
+#BETTER
+#ocamlfind ocamlc -g -principal protobuf_capable.mli protobuf_capable.ml robj.mli robj.ml response.mli response.ml opts.mli opts.ml request.mli request.ml lwt_conn.mli lwt_conn.ml protobuf_capables.ml lwt_cache.mli lwt_cache.ml lwt_riakc.ml lwt_all_tests.ml -linkpkg -thread -I ../lib/ -package lwt,lwt.unix,bitstring,core,ppx_tools,ppx_deriving_protobuf,ppx_deriving.show

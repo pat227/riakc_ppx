@@ -11,7 +11,7 @@ end
 
 module String = Lwt_riakc.Lwt_Cache.String
 (*module StringCache = Lwt_riakc.Lwt_Cache.StringCache*)
-module StringCache = Lwt_riakc.Lwt_Cache.Make(String)(String)
+module StringCache = Lwt_riakc.Lwt_Cache.Make_with_string_key(String)
 let lwt_logger = Lwt_log.file ~mode:`Truncate ~file_name:"lwt_all_tests_log";;
 module Rand = struct
   let lowercase = "abcdefghijklmnopqrstuvwxyz"
