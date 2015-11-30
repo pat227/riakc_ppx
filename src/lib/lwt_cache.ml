@@ -454,8 +454,8 @@ module Make_with_usermeta_index_raw_key
     >|= function
       | Result.Ok keys ->
 	 Result.Ok (List.map (fun (b:string) ->
-			      let d = Protobuf.Decoder.of_bytes (Bytes.of_string b) in 
-			      Key.from_protobuf d) keys)
+			      (*let d = Protobuf.Decoder.of_bytes (Bytes.of_string b) in *)
+			      Key.from_protobuf (Protobuf.Decoder.of_string b)) keys)
       | Result.Error err ->
 	 Result.Error err
 
