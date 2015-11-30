@@ -17,7 +17,7 @@ end
 			 
 module type S =
   sig
-    module Key : Protobuf_capable.Raw_S
+    module Key : Protobuf_capable.S
     module Value : Protobuf_capable.S
     module Usermeta_value : Protobuf_capable.S
     module Index_value : Protobuf_capable.S
@@ -231,7 +231,7 @@ module type S =
   end
 
 module Make_with_usermeta_index_raw_key
-	 (Key:Protobuf_capable.Raw_S)
+	 (Key:Protobuf_capable.S)
 	 (Value:Protobuf_capable.S) 
 	 (Usermeta_value: Protobuf_capable.S) 
 	 (Index_value:Protobuf_capable.S) = struct 
@@ -241,10 +241,10 @@ module Make_with_usermeta_index_raw_key
   module Usermeta_value = Usermeta_value
   module Index_value = Index_value
 			 
-  let serialize_key = Key.to_string 
+  let serialize_key = Protobuf_capable.serialize_proto Key.to_protobuf
   let serialize_value = Protobuf_capable.serialize_proto Value.to_protobuf 
 
-  let deserialize_key = Key.of_string
+  let deserialize_key = Protobuf_capable.deserialize_proto Key.from_protobuf
   let deserialize_value = Protobuf_capable.deserialize_proto Value.from_protobuf
 
   type conn = Lwt_conn.t 
@@ -449,11 +449,15 @@ module Make_with_usermeta_index_raw_key
   let with_cache ~host ~port ~bucket f =
     Lwt_conn.with_conn host port (fun conn -> (f (create ~conn ~bucket)))
 
-  let list_keys cache = Lwt_conn.list_keys cache.conn cache.bucket >|= function
-    | Result.Ok keys -> (** TODO - why do I need encode_decode here ? *)
-        Result.Ok (List.map (fun (b:string) -> Key.of_string (Protobuf_capable.encode_decode b)) keys)
-    | Result.Error err ->
-        Result.Error err
+  let list_keys cache =
+    Lwt_conn.list_keys cache.conn cache.bucket
+    >|= function
+      | Result.Ok keys ->
+	 Result.Ok (List.map (fun (b:string) ->
+			      let d = Protobuf.Decoder.of_bytes (Bytes.of_string b) in 
+			      Key.from_protobuf d) keys)
+      | Result.Error err ->
+	 Result.Error err
 
   let get cache ?(opts = []) (k:Key.t) = Lwt_conn.get cache.conn ~opts ~b:cache.bucket (serialize_key k) 
 					 >|= function
@@ -520,14 +524,14 @@ module Make_with_usermeta_index_raw_key
   let bucket_props t = Lwt_conn.bucket_props (get_conn t) (get_bucket t)
 end
 
-module Conv = Protobuf_capable.Conversion.Make
+(*module Conv = Protobuf_capable.Conversion.Make*)
 
 module Make_with_usermeta_index
  (Key:Protobuf_capable.S)
  (Value:Protobuf_capable.S) 
  (Usermeta_value: Protobuf_capable.S) 
  (Index_value:Protobuf_capable.S) = 
-   Make_with_usermeta_index_raw_key(Conv(Key))(Value)(Usermeta_value)(Index_value)
+   Make_with_usermeta_index_raw_key(Key)(Value)(Usermeta_value)(Index_value)
 
 module Make_with_usermeta(Key:Protobuf_capable.S) (Value:Protobuf_capable.S) (Usermeta_value:Protobuf_capable.S) =
   Make_with_usermeta_index(Key) (Value) (Usermeta_value) (Default_index)
@@ -536,9 +540,9 @@ module Make_with_index(Key:Protobuf_capable.S)(Value:Protobuf_capable.S)(Index_v
   Make_with_usermeta_index(Key)(Value) (Default_usermeta) (Index_value)
 
 module Make_with_string_key(Value:Protobuf_capable.S) =
-  Make_with_usermeta_index_raw_key(Core.Std.String)
+  Make_with_usermeta_index_raw_key(Protobuf_capables.RawString_Key)
   (Value) (Default_usermeta) (Default_index)
 
 module Make(Key:Protobuf_capable.S) (Value:Protobuf_capable.S) =
-  Make_with_usermeta_index_raw_key(Conv(Key)) (Value) (Default_usermeta) (Default_index)
+  Make_with_usermeta_index_raw_key(Key) (Value) (Default_usermeta) (Default_index)
 

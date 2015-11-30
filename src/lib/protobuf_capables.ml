@@ -13,7 +13,19 @@ module String =
     let from_protobuf d = Bytes.to_string (Protobuf.Decoder.bytes d)
     let show t = t 
   end
-    
+
+(*to_protobuf should fill encoder with plain value, no varint encoding...client code should 
+  invoke serialize_proto as normal.
+  from_protobuf should return type t.
+  These methods work with minor modification to underling ppx_deriving_protobuf code*)
+module RawString_Key = 
+  struct
+    include String
+    let to_protobuf t e = Protobuf.Encoder.of_bytes e (Bytes.of_string t)
+    let from_protobuf d = Bytes.to_string (Protobuf.Decoder.to_bytes d ())
+    let show t = t 
+  end
+
 module Bool = struct
   include Core.Std.Bool
   type bool_t = private bool [@@deriving protobuf]
@@ -28,7 +40,7 @@ module Int = struct
   let from_protobuf d = Int64.to_int (Protobuf.Decoder.varint d)
   let show b = to_string b
 end       
-	       
+
 module Float = struct
   include Core.Std.Float
   type float_t = private float [@@deriving protobuf]
@@ -36,4 +48,3 @@ module Float = struct
   let from_protobuf = float_t_from_protobuf
   let show t = to_string t
 end
-		 

@@ -7,14 +7,14 @@ module type S =
     val from_protobuf : D.t -> t
     val to_protobuf : t -> E.t -> unit
   end
-
+(*
 module type Raw_S =
   sig
     type t
     val to_string : t -> string
     val of_string : string -> t
   end
-
+ *)
 (* The internal protocol version *)
 let proto_version = 0
 
@@ -45,7 +45,7 @@ let deserialize_proto (from_protobuf:Protobuf.Decoder.t -> 'a) (b:string) : 'a =
   let d = Protobuf.Decoder.of_string b in 
   let versioned = versioned_from_protobuf d in
   deserialize_version versioned.version from_protobuf versioned.data
-
+(*
 module Conversion =
   struct
     module Make(S:S) =
@@ -55,4 +55,4 @@ module Conversion =
               let of_string (s:string) = failwith("nyi")
       end
   end
-
+ *)

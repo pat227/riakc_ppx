@@ -9,7 +9,7 @@ module type S =
     val from_protobuf : D.t -> t
     val to_protobuf : t -> E.t -> unit
   end
-
+(*
 module type Raw_S =
   sig
     type t
@@ -24,7 +24,7 @@ module Conversion :
         include Raw_S with type t = S.t
       end
   end
-
+  *)
 val encode_decode : string -> string
 
 type versioned = {version: int [@key 1]; data:string [@key 2]} [@@deriving protobuf]

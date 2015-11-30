@@ -1,18 +1,18 @@
 open Core.Std
 open Lwt
-open Lwt_log
 open Lwt_riakc
 module Rconn = Lwt_riakc.Lwt_Conn
 module Robj  = Lwt_riakc.Robj
 module State = struct
   type t = unit
+
   let create () = ()
 end
 
 module String = Lwt_riakc.Lwt_Cache.String
 (*module StringCache = Lwt_riakc.Lwt_Cache.StringCache*)
-module StringCache = Lwt_riakc.Lwt_Cache.Make_with_string_key(String)
-let lwt_logger = Lwt_log.file ~mode:`Truncate ~file_name:"lwt_all_tests_log";;
+module StringCache = Lwt_cache.Make(String)(String)
+
 module Rand = struct
   let lowercase = "abcdefghijklmnopqrstuvwxyz"
   let alpha     = lowercase ^ String.uppercase lowercase
@@ -34,11 +34,11 @@ module Rand = struct
 end
 
 let assert_cond msg = function
-  | true  -> Lwt.return (Core.Std.Result.Ok ())
-  | false -> Lwt.return(Ok(printf "Error: %s\n" msg)) >>=
-	       fun _ -> lwt_logger () >>=
-	       fun l -> Lwt_log.log ~logger:l ~level:Lwt_log.Debug ("Error: " ^ msg) >|=
-	       fun () -> Core.Std.Result.Error `Assert_failed
+  | true  -> Lwt.return (Ok ())
+  | false -> begin
+    printf "Error: %s\n" msg;
+    Lwt.return (Error `Assert_failed)
+  end
 
 let ping_test c =
   Rconn.ping (StringCache.get_conn c) >|= fun _ -> Ok ()
@@ -63,8 +63,6 @@ let list_keys_test c =
 				    (StringCache.Robj.Content.create "foobar")
 				in
 				StringCache.put c ~k:(Rand.key 10) robj >>= fun _ ->
-				let span = Core.Std.Time.Span.of_int_sec 3 in
-				let _ = Core.Std.Time.pause span in
 				StringCache.list_keys c >>= function
 							  | Ok(keys2) ->
 							     (assert_cond
@@ -75,18 +73,18 @@ let list_keys_test c =
 								"Key not in list"
 								(List.mem keys2 "foobar")
 							     )
-							  | Core.Std.Result.Error err -> assert_cond "Failed to list keys index 74" false
+							  | Error err -> assert_cond "Failed to list keys index 74" false
 			       )
-			    | Core.Std.Result.Error err -> assert_cond "Failed to list keys index 76" false
+			    | Error err -> assert_cond "Failed to list keys index 76" false
 
 let get_notfound_test c =
   StringCache.get c "no_key_here" >>= function
-    | Core.Std.Result.Error `Notfound ->
+    | Error `Notfound ->
       Lwt.return (Ok ())
-    | Core.Std.Result.Error err ->
-      Lwt.return (Core.Std.Result.Error err)
+    | Error err ->
+      Lwt.return (Error err)
     | Ok _ ->
-      Lwt.return (Core.Std.Result.Error `Bad_response)
+      Lwt.return (Error `Bad_response)
 
 let get_found_test c =
   let robj =
@@ -96,12 +94,10 @@ let get_found_test c =
   let key = Rand.key 10 in
   StringCache.put c ~k:key robj >>= function
 				  | Ok (_, _) ->
-				     let span = Core.Std.Time.Span.of_int_sec 3 in
-				     let _ = Core.Std.Time.pause span in
 				     (StringCache.get c key         >>= fun robj ->
 				      Lwt.return (Ok ()))
-				  | Core.Std.Result.Error err -> assert_cond "Failed get_found_test index 97" false
-
+				  | Error err -> assert_cond "Failed get_found_test index 97" false
+						
 let put_return_body_test c =
   let open Opts.Put in
   let module Robj = StringCache.Robj in
@@ -117,7 +113,7 @@ let put_return_body_test c =
 	assert_cond
 	  "Add created sibling"
 	  (List.length (Robj.contents robj) = List.length (Robj.contents robj')))
-    | Core.Std.Result.Error err -> assert_cond "Failed put_return_body_test index 114" false
+    | Error err -> assert_cond "Failed put_return_body_test index 114" false
 
 let tests = [ ("ping"           , ping_test)
 	    ; ("client_id"      , client_id_test)
@@ -139,37 +135,26 @@ let execute_test t =
   in
   with_cache ()
 
-let rec execute_tests s =
-  match s with 
-  | [] -> begin
-	  printf "Finished list of tests\n";
-	  Lwt.return (printf "Finished list of tests\n")
-	end
+let rec execute_tests s = function
+  | [] -> Lwt.return ()
   | (name, t)::ts ->
      begin
-       printf "Doing a test\n";
        execute_test t >>=
 	 (function
 	   | Ok () -> begin
 		      printf "%s...PASSED\n" name;
-		      execute_tests ts
+		      execute_tests s ts
 		    end
-	   | Core.Std.Result.Error _ -> begin
-					printf "%s...FAILED\n" name;
-					execute_tests ts
-				      end)
+	   | Error _ -> begin
+			printf "%s...FAILED\n" name;
+			execute_tests s ts
+		      end)
      end
 
-let run_tests tests =
-  printf "run_tests\n";
-  execute_tests tests
-		
+let run_tests () =
+  execute_tests (State.create ()) tests
+
 let () =
   Random.self_init ();
-  Lwt_main.run (Lwt.join
-		  [
-		    Lwt.return(printf "Starting tests\n");
-		    run_tests tests;
-		  ]);
-  (*Lwt_main.run (Lwt.return(printf "test"));*)
+  Lwt_main.run (run_tests ());
   

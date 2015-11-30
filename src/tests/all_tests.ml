@@ -65,6 +65,8 @@ let list_keys_test c =
       (StringCache.Robj.Content.create "foobar")
   in
   StringCache.put c ~k:(Rand.key 10) robj >>= fun _ ->
+  let span = Core.Std.Time.Span.of_int_sec 3 in
+  let _ = Core.Std.Time.pause span in
   StringCache.list_keys c >>= fun keys2 ->
   assert_cond
     "Key not added"
@@ -91,6 +93,8 @@ let get_found_test c =
   in
   let key = Rand.key 10 in
   StringCache.put c ~k:key robj >>= fun (_, _) ->
+  let span = Core.Std.Time.Span.of_int_sec 3 in
+  let _ = Core.Std.Time.pause span in
   StringCache.get c key         >>= fun robj ->
   Deferred.return (Ok ())
 
