@@ -1,7 +1,8 @@
 open Core.Std
 open Async.Std
 module String = Core.Std.String
-
+module Log = Mylogging.Log
+		  
 type t = { r : Reader.t
 	 ; w : Writer.t
 	 }
@@ -19,19 +20,28 @@ let rec read_str r pos s =
       Deferred.return (Error `Bad_conn)
 
 let parse_length preamble =
+  let tnow = Core.Std.Time.now () in
+  let ts = Core.Std.Time.to_string_abs ~zone:(Core.Std.Time.Zone.of_utc_offset 0) tnow in
+  let _ = print_string (ts ^ "conn.ml::parse_length() preamble:" ^ (Log.hex_of_string preamble) ^ "\n") in 
   Deferred.return (Response.parse_length preamble)
 
 let read_payload r preamble =
+  let tnow = Core.Std.Time.now () in
+  let ts = Core.Std.Time.to_string_abs ~zone:(Core.Std.Time.Zone.of_utc_offset 0) tnow in
   let open Deferred.Result.Monad_infix in
+  let _ = print_string (ts ^ "conn.ml::read_payload()\n") in 
   parse_length preamble >>= fun resp_len ->
   let payload = String.create resp_len in
   read_str r 0 payload
 
 let rec read_response r f c =
+  let tnow = Core.Std.Time.now () in
+  let ts = Core.Std.Time.to_string_abs ~zone:(Core.Std.Time.Zone.of_utc_offset 0) tnow in
   let open Deferred.Result.Monad_infix in
   let preamble = String.create 4 in
   read_str r 0 preamble       >>= fun _ ->
   read_payload r preamble     >>= fun payload ->
+  let _ = print_string (ts ^ "conn.ml::read_response() payload:" ^ (Log.hex_of_string payload) ^ "\n") in 
   Deferred.return (f payload) >>= function
     | Response.More resp ->
       let open Deferred.Monad_infix in
@@ -43,8 +53,11 @@ let rec read_response r f c =
       Deferred.return (Ok ())
 
 let do_request_stream t c g f =
+  let tnow = Core.Std.Time.now () in
+  let ts = Core.Std.Time.to_string_abs ~zone:(Core.Std.Time.Zone.of_utc_offset 0) tnow in
   let open Deferred.Result.Monad_infix in
   Deferred.return (g ()) >>= fun request ->
+  let _ = print_string (ts ^ "conn.ml::do_request_stream() request:" ^ (Log.hex_of_string request) ^ "\n") in 
   Writer.write t.w request;
   read_response t.r f c
 
@@ -141,6 +154,7 @@ let bucket_props t bucket =
       Error err
 
 let list_buckets t =
+  let _ = print_string ("conn.ml::list_buckets\n") in 
   do_request
     t
     Request.list_buckets
@@ -162,6 +176,7 @@ let list_keys_stream t bucket consumer =
     Response.list_keys
 
 let list_keys t bucket =
+  let _ = print_string ("conn.ml::list_keys\n") in 
   do_request
     t
     (Request.list_keys bucket)
@@ -173,6 +188,7 @@ let list_keys t bucket =
       Error err
 
 let get t ?(opts = []) ~b k =
+  let _ = print_string ("conn.ml::get\n") in 
   do_request
     t
     (Request.get (Opts.Get.get_of_opts opts ~b ~k))
@@ -180,30 +196,36 @@ let get t ?(opts = []) ~b k =
   >>| function
     | Ok [robj] -> begin
       if Robj.contents robj = [] && Robj.vclock robj = None then
-	(printf "\nget::Not found";
+	(print_string "conn.ml::get::Not found\n";
 	 Error `Notfound)
       else
-	Ok robj
+	(print_string "conn.ml::get::Ok robj\n"; Ok robj)
     end
-    | Ok _ ->  (printf "\nget::Ok_ error";
+    | Ok _ ->  (print_string "conn.ml::get::Ok_ error\n";
       Error `Wrong_type)
-    | Error err ->  (printf "\nget::Error error";
+    | Error err ->  (print_string "conn.ml::get::Error error\n";
       Error err)
 
 let put t ?(opts = []) ~b ?k robj =
+  let tnow = Core.Std.Time.now () in
+  let ts = Core.Std.Time.to_string_abs ~zone:(Core.Std.Time.Zone.of_utc_offset 0) tnow in
+(*  let p_of_o = Opts.Put.put_of_opts opts ~b ~k robj in
+  let pb_of_put = Opts.Put.to_protobuf p_of_o in*)
+  let _ = print_string (ts ^ "conn.ml::put with value:" (*^ (Log.hex_of_string pb_of_put)*) ^ " \n") in
   do_request
     t
     (Request.put (Opts.Put.put_of_opts opts ~b ~k robj))
     Response.put
   >>| function
-    | Ok [(robj, key)] ->
+    | Ok [(robj, key)] -> print_string ("conn.ml::put::Ok robj \n");
       Ok (robj, key)
-    | Ok _ -> (printf "\nput::Ok_ error";
+    | Ok _ -> ((print_string ("conn.ml::put::Ok_ error\n"));
       Error `Wrong_type)
-    | Error err ->  (printf "\nput::Error err";
+    | Error err ->  ((print_string ("conn.ml::put::Error err\n"));
       Error err)
 
 let delete t ?(opts = []) ~b k =
+  let _ = print_string ("conn.ml::delete\n") in 
   do_request
     t
     (Request.delete (Opts.Delete.delete_of_opts opts ~b ~k))
@@ -231,6 +253,7 @@ let purge t ~b =
 				| Error err -> Deferred.return(Error err))
 
 let index_search t ?(opts = []) ~b ~index query_type =
+  let _ = print_string ("conn.ml::index_search\n") in 
   let idx_s =
     Opts.Index_search.index_search_of_opts
       opts

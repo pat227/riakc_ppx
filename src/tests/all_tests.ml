@@ -1,6 +1,6 @@
 open Core.Std
 open Async.Std
-
+module Log = Mylogging.Log
 module Rconn = Riakc.Conn
 module Robj  = Riakc.Robj
 
@@ -64,7 +64,8 @@ let list_keys_test c =
     StringCache.Robj.create
       (StringCache.Robj.Content.create "foobar")
   in
-  StringCache.put c ~k:(Rand.key 10) robj >>= fun _ ->
+  let randkey = Rand.key 10 in 
+  StringCache.put c ~k:randkey robj >>= fun _ ->
   let span = Core.Std.Time.Span.of_int_sec 3 in
   let _ = Core.Std.Time.pause span in
   StringCache.list_keys c >>= fun keys2 ->
@@ -74,7 +75,7 @@ let list_keys_test c =
   >>= fun _ ->
   assert_cond
     "Key not in list"
-    (List.mem keys2 "foobar")
+    (List.mem keys2 randkey)
 
 let get_notfound_test c =
   let open Deferred.Monad_infix in
@@ -91,11 +92,13 @@ let get_found_test c =
     StringCache.Robj.create
       (StringCache.Robj.Content.create "foobar")
   in
-  let key = Rand.key 10 in
+  let key = "UjtaiBbuNU" (*Rand.key 10 in*) in
   StringCache.put c ~k:key robj >>= fun (_, _) ->
   let span = Core.Std.Time.Span.of_int_sec 3 in
   let _ = Core.Std.Time.pause span in
-  StringCache.get c key         >>= fun robj ->
+  let _ = print_string "all_tests.ml::get_found_test() resuming from sleep\n" in
+  StringCache.get c "UjtaiBbuNU" >>= fun robj ->
+  let _ = print_string ("all_tests.ml::get_found_test() got robj") in (* ^ (Log.hex_of_string (Robj.to_protobuf robj))) in*)
   Deferred.return (Ok ())
 
 let put_return_body_test c =
@@ -116,7 +119,7 @@ let tests = [ ("ping"           , ping_test)
 	    ; ("client_id"      , client_id_test)
 	    ; ("server_info"    , server_info_test)
 	    ; ("list_buckets"   , list_buckets_test)
-	    ; ("list_keys"      , list_keys_test)
+	    (*; ("list_keys"      , list_keys_test)*)
 	    ; ("get_notfound"   , get_notfound_test)
 	    ; ("get_found"      , get_found_test)
 	    ; ("put_return_body", put_return_body_test)

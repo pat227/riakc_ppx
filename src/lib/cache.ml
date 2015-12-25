@@ -16,7 +16,7 @@ module Default_index = struct
   | Bad_int [@key 5] of string [@key 6]
   | Unknown [@key 7] of string [@key 8] [@@deriving protobuf, show]
 end
-			 
+
 module type S =
   sig
     module Key : Protobuf_capable.S
@@ -243,26 +243,26 @@ module Make_with_usermeta_index_raw_key
   module Usermeta_value = Usermeta_value
   module Index_value = Index_value
 
-  let serialize_key = Protobuf_capable.serialize_proto Key.to_protobuf
+  let serialize_key = (*Key.to_string*) Protobuf_capable.serialize_proto Key.to_protobuf
   let serialize_value = Protobuf_capable.serialize_proto Value.to_protobuf 
 
-  let deserialize_key = Protobuf_capable.deserialize_proto Key.from_protobuf
+  let deserialize_key = (*Key.of_string*) Protobuf_capable.deserialize_proto Key.from_protobuf
   let deserialize_value = Protobuf_capable.deserialize_proto Value.from_protobuf
-					    
+
   type conn = Conn.t 
   type t = {conn:conn;bucket:string} 
-	     
+     
   let get_conn t = t.conn
   let get_bucket t = t.bucket
-		       
+	       
   module Put = Opts.Put
   module Get = Opts.Get
   module Delete = Opts.Delete
-		    
+	    
   module Unsafe_Robj = Robj
-			 
+
   module Robj = struct
-    
+
     module Link = 
       struct
 	type t = { bucket : string option 
@@ -273,57 +273,61 @@ module Make_with_usermeta_index_raw_key
 	let bucket t = t.bucket
 	let key t    = t.key
 	let tag t    = t.tag
-			 
+
 	let set_bucket b t = { t with bucket = b }
 	let set_key k t    = { t with key = k }
 	let set_tag tag t  = { t with tag = tag }
-			       
+
 	let to_unsafe (t:t) : Unsafe_Robj.Link.t = 
 	  let key = Option.map (key t) serialize_key in
 	  let bucket = bucket t in
 	  let tag = tag t in
 	  {Unsafe_Robj.Link.bucket; key; tag}
-	    
+
 	let from_unsafe (t:Unsafe_Robj.Link.t) : t =
 	  let key = Option.map (Unsafe_Robj.Link.key t) deserialize_key in
 	  let bucket = Unsafe_Robj.Link.bucket t in
 	  let tag = Unsafe_Robj.Link.tag t in {bucket;key;tag}
-						
       end
-	
+ 
     module type Unsafe_Pair = sig
 	type t = {key: string ; value : string option}
 	val value : t -> string option
 	val key : t -> string
       end
-				
+
     module Pair(Unsafe: Unsafe_Pair) (V:Protobuf_capable.S) = struct
       type t = { key : Key.t 
                ; value : V.t option 
 	       }  
-		 
+
       let create ~k ~v = { key = k; value = v }
-			   
+
       let key t   = t.key
       let value t = t.value
-		      
+
       let set_key s t = {t with key = s}
       let set_value so t = {t with value = so}
-			     
+
       let to_unsafe (t:t) : Unsafe.t = 
 	let key = serialize_key (key t) in
-
+	let tnow = Core.Std.Time.now () in
+	let ts = Core.Std.Time.to_string_abs ~zone:(Core.Std.Time.Zone.of_utc_offset 0) tnow in
+	let _ = print_string (ts ^ "cache.ml::to_unsafe() index 315 about to serialize_proto\n") in
 	let value = Option.map (value t) (Protobuf_capable.serialize_proto V.to_protobuf) in
 	{ Unsafe.key; Unsafe.value}
-	  
+
       let from_unsafe (t:Unsafe.t) : t =
+	let tnow = Core.Std.Time.now () in
+	let ts = Core.Std.Time.to_string_abs ~zone:(Core.Std.Time.Zone.of_utc_offset 0) tnow in
+	let _ = print_string (ts ^ "cache.ml::from_unsafe() index 320 about to deserialize_proto\n") in
 	let value = Option.map (Unsafe.value t) (Protobuf_capable.deserialize_proto V.from_protobuf) in
 	let key = deserialize_key (Unsafe.key t) in {key;value}
     end
-								
+
     module Usermeta = Pair(Unsafe_Robj.Usermeta)(Usermeta_value)
     module Index = Pair(Unsafe_Robj.Index)(Index_value)
-		       
+
     module Content = struct
       type t = { value            : Value.t 
 	       ; content_type     : string option 
@@ -337,7 +341,7 @@ module Make_with_usermeta_index_raw_key
 	       ; indices          : Index.t list 
 	       ; deleted          : bool option
 	       } 
-		 
+
       let value t            = t.value
       let content_type t     = t.content_type
       let charset t          = t.charset
@@ -350,7 +354,7 @@ module Make_with_usermeta_index_raw_key
       let indices t          = t.indices
       let deleted t          = match t.deleted with Some x -> x | None -> false
 
-	
+
       let create v = {value = v; 
 		      content_type=None;
 		      charset=None;
@@ -361,9 +365,13 @@ module Make_with_usermeta_index_raw_key
 		      usermeta=[];
 		      indices=[];
 		      deleted=None}
-		       
-      let to_unsafe (t:t) : Unsafe_Robj.Content.t = 
 
+      let to_unsafe (t:t) : Unsafe_Robj.Content.t =
+	let getoptint = (fun x -> match x with Some i -> i | None -> Int32.zero) in
+	let tnow = Core.Std.Time.now () in
+	let ts = Core.Std.Time.to_string_abs ~zone:(Core.Std.Time.Zone.of_utc_offset 0) tnow in
+	let _ = print_string (ts ^ "to_unsafe index 373...") in
+	let _ = print_string ("last_mod:" ^ (Int32.to_string (getoptint t.last_mod)) ^ "\n") in
         let module C = Unsafe_Robj.Content in 
         let open C in 
         create (serialize_value t.value) |>
@@ -371,15 +379,22 @@ module Make_with_usermeta_index_raw_key
         set_charset t.charset |>
         set_content_encoding t.content_encoding |> 
         set_vtag t.vtag  |>
-        set_links (List.map Link.to_unsafe t.links) |> 
+	set_links (List.map Link.to_unsafe t.links) |>
         set_last_mod t.last_mod |>
-        set_last_mod_usec t.last_mod_usec |>
+	set_last_mod_usec t.last_mod_usec |>
         set_usermeta (List.map Usermeta.to_unsafe t.usermeta) |> 
         set_indices (List.map Index.to_unsafe t.indices)
 
       let from_unsafe (content:Unsafe_Robj.Content.t) =
+	let getoptint = (fun x -> match x with Some i -> i | None -> Int32.zero) in
+	let tnow = Core.Std.Time.now () in
+	let ts = Core.Std.Time.to_string_abs ~zone:(Core.Std.Time.Zone.of_utc_offset 0) tnow in
+	let _ = print_string (ts ^ "from_unsafe index 391...") in 
 	let module C = Unsafe_Robj.Content in
 	let v = deserialize_value (C.value content) in
+	let _ = print_string (ts ^ "last_mod:") in
+	let _ = print_string (Int32.to_string (getoptint (C.last_mod content))) in
+	let _ = print_string "\n" in
 	{(create v) with 
           content_type = C.content_type content; 
           charset = C.charset content;
@@ -391,8 +406,8 @@ module Make_with_usermeta_index_raw_key
           usermeta = List.map Usermeta.from_unsafe (C.usermeta content);
           indices = List.map Index.from_unsafe (C.indices content);
           deleted = if (C.deleted content) then Some true else None}
-	  
-	  
+
+
       let set_value v t             = { t with value = v }
       let set_content_type ct t     = { t with content_type = ct }
       let set_charset cs t          = { t with charset = cs }
@@ -403,22 +418,21 @@ module Make_with_usermeta_index_raw_key
       let set_last_mod_usec lmu t   = { t with last_mod_usec = lmu }
       let set_usermeta u t          = { t with usermeta = u }
       let set_indices i t           = { t with indices = i }
-					
     end
-		       
+
     type 'a t = { contents  : Content.t list
 		; vclock    : string option
 		; unchanged : bool
 		}
-		  
+
     let create c =
       { contents  = [c]
       ; vclock    = None
       ; unchanged = false
       }
-	
+
     let of_value v = create (Content.create v)
-			    
+
     let create_siblings contents =
       { contents  = contents
       ; vclock    = None
@@ -445,8 +459,10 @@ module Make_with_usermeta_index_raw_key
   end
 		  
   let create ~conn ~bucket = {conn;bucket}
-  let list_keys_stream cache consumer = Conn.list_keys_stream cache.conn cache.bucket
-							      (fun string -> let keys = List.map (fun b -> deserialize_key b) string in consumer keys) 
+  let list_keys_stream cache consumer =
+    Conn.list_keys_stream
+      cache.conn cache.bucket
+      (fun string -> let keys = List.map (fun b -> deserialize_key b) string in consumer keys) 
 							      
   let with_cache ~host ~port ~bucket f =
     Conn.with_conn host port (fun conn -> (f (create ~conn ~bucket)))
@@ -455,9 +471,9 @@ module Make_with_usermeta_index_raw_key
     Conn.list_keys cache.conn cache.bucket
     >>| function
       | Result.Ok keys ->
-         Result.Ok (List.map (fun (b:string) ->
+         Result.Ok (List.map (fun (b:string) -> (*Key.of_string (Protobuf_capable.encode_decode b)) keys)*)
 			      (*let d = Protobuf.Decoder.of_bytes (Bytes.of_string b) in*)
-			      Key.from_protobuf (Protobuf.Decoder.of_string (Protobuf_capable.encode_decode b))) keys)
+                              Key.from_protobuf (Protobuf.Decoder.of_string (Protobuf_capable.encode_decode b))) keys)
       | Result.Error err ->
          Result.Error err
 
@@ -510,7 +526,6 @@ module Make_with_usermeta_index_raw_key
        | Result.Ok () -> Result.Ok ()
        | Result.Error err -> Result.Error err
 
-
   let index_search t ?(opts = []) ~(index:Index_value.t) query_type =
     Conn.index_search
       t.conn
@@ -525,9 +540,9 @@ module Make_with_usermeta_index_raw_key
         Result.Error err
   let bucket_props t = Conn.bucket_props (get_conn t) (get_bucket t)
 end
-
-(*module Conv = Protobuf_capable.Conversion.Make*)
-
+(*
+module Conv = Protobuf_capable.Conversion.Make
+ *)
 module Make_with_usermeta_index
  (Key:Protobuf_capable.S)
  (Value:Protobuf_capable.S) 
@@ -540,11 +555,11 @@ module Make_with_usermeta(Key:Protobuf_capable.S) (Value:Protobuf_capable.S) (Us
 
 module Make_with_index(Key:Protobuf_capable.S)(Value:Protobuf_capable.S)(Index_value:Protobuf_capable.S) =
   Make_with_usermeta_index(Key)(Value) (Default_usermeta) (Index_value)
-
+(*
 module Make_with_string_key(Value:Protobuf_capable.S) =
-  Make_with_usermeta_index_raw_key(Protobuf_capables.RawString_Key)
+  Make_with_usermeta_index_raw_key(Core.Std.String)    (*(Protobuf_capables.RawString_Key)*)
   (Value) (Default_usermeta) (Default_index)
-
+ *)
 module Make(Key:Protobuf_capable.S) (Value:Protobuf_capable.S) =
   Make_with_usermeta_index_raw_key(Key) (Value) (Default_usermeta) (Default_index)
 

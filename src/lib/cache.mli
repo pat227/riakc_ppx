@@ -245,11 +245,12 @@ module type of Make_with_usermeta_index(Key)(Value)(Default_usermeta)(Index_valu
 module Make :
 functor (Key : Protobuf_capable.S) (Value : Protobuf_capable.S) 
 	-> module type of Make_with_usermeta(Key)(Value)(Default_usermeta)
-
+(*
 module Make_with_string_key :
   functor (Value : Protobuf_capable.S) ->
-module type of Make_with_usermeta_index_raw_key(Protobuf_capables.RawString_Key)
+module type of Make_with_usermeta_index_raw_key(Core.Std.String)
 					       (Value)(Default_usermeta)(Default_index)
+ *)
 (*
 module Make :
 functor (Key : Protobuf_capable.S) (Value : Protobuf_capable.S) -> 
