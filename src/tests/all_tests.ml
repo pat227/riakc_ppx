@@ -12,9 +12,9 @@ module State = struct
   let create () = ()
 end
 
-module String = Cache.String
-module StringCache = Caches.StringCache
-
+module String = Protobuf_capables.String
+module StringCache = Caches.StringCache (* Caches.RawStringKeyCache*)
+module Protobuf_capable = Protobuf_capable
 module Rand = struct
   let lowercase = "abcdefghijklmnopqrstuvwxyz"
   let alpha     = lowercase ^ String.uppercase lowercase
@@ -34,13 +34,22 @@ module Rand = struct
   let key n = let bytes = pick_n (Bytes.of_string alpha) n in
   Bytes.to_string bytes
 end
-
+  
 let assert_cond msg = function
   | true  -> Deferred.return (Ok ())
   | false -> begin
     printf "Error: %s\n" msg;
     Deferred.return (Error `Assert_failed)
   end
+
+let roundtrip_test c =
+  let k = "abcdefghij" in
+  let serialized_k = Protobuf_capable.serialize_proto String.to_protobuf k in
+  let deserialized_k = Protobuf_capable.deserialize_proto String.from_protobuf serialized_k in
+  let b1 = Bytes.of_string k in
+  let b2 = Bytes.of_string deserialized_k in
+  let _ = print_string ("k:" ^ k ^ "  |serialized_k:" ^ serialized_k ^ "  |deserialized_k:" ^ deserialized_k ^ "\n") in
+  assert_cond "Roundtrip failed." ((Bytes.compare b1 b2) = 0);;
 
 let ping_test c =
   Rconn.ping (StringCache.get_conn c) >>= fun _ ->
@@ -64,7 +73,7 @@ let list_keys_test c =
     StringCache.Robj.create
       (StringCache.Robj.Content.create "foobar")
   in
-  let randkey = Rand.key 10 in 
+  let randkey = "abcdefghij" in (*Rand.key 10 in*)
   StringCache.put c ~k:randkey robj >>= fun _ ->
   let span = Core.Std.Time.Span.of_int_sec 3 in
   let _ = Core.Std.Time.pause span in
@@ -87,17 +96,27 @@ let get_notfound_test c =
     | Ok _ ->
       Deferred.return (Error `Bad_response)
 
+(*let roundtrip_robj c =
+  let robj =
+    let content = (StringCache.Robj.Content.create "foobar2") in 
+    let content_ = StringCace.Content.set_ content_encoding "ascii-utf8" in
+    StringCache.Robj.create content_ in
+  let _ = print_string (StringCache.Robj.show robj) in
+  let putopts = Opts.Put.put_of_opts [] "" "klmnopqrst" robj in
+  let pbofput = Opts.Put.put_to_protobuf putopts in
+  let _ = printstring pbofput in*)
+    
 let get_found_test c =
   let robj =
     StringCache.Robj.create
-      (StringCache.Robj.Content.create "foobar")
-  in
-  let key = "UjtaiBbuNU" (*Rand.key 10 in*) in
+      (StringCache.Robj.Content.create "foobar2") in
+  let _ = print_string (StringCache.Robj.show robj) in
+  let key = (*"UjtaiBbuNU" Rand.key 10*) "klmnopqrst" in
   StringCache.put c ~k:key robj >>= fun (_, _) ->
   let span = Core.Std.Time.Span.of_int_sec 3 in
   let _ = Core.Std.Time.pause span in
   let _ = print_string "all_tests.ml::get_found_test() resuming from sleep\n" in
-  StringCache.get c "UjtaiBbuNU" >>= fun robj ->
+  StringCache.get c key >>= fun robj ->
   let _ = print_string ("all_tests.ml::get_found_test() got robj") in (* ^ (Log.hex_of_string (Robj.to_protobuf robj))) in*)
   Deferred.return (Ok ())
 
@@ -106,20 +125,23 @@ let put_return_body_test c =
   let module Robj = StringCache.Robj in
   let robj =
     Robj.create
-      (Robj.Content.create "foobar")
+      (Robj.Content.create "foobar3")
   in
-  let key = Rand.key 10 in
-  StringCache.put c ~opts:[Return_body] ~k:key robj            >>= fun (robj', key) ->
+  let key = (*Rand.key 10*) "uvwxyz0102" in
+  StringCache.put c ~opts:[Return_body] ~k:key robj >>= fun (robj', key) ->
   assert_cond "Key created for unknown reason" (key = None) >>= fun _ ->
   assert_cond
     "Add created sibling"
     (List.length (Robj.contents robj) = List.length (Robj.contents robj'))
-
-let tests = [ ("ping"           , ping_test)
+(*
+let tests = [("roundtrip_test", roundtrip_test)]
+ *)
+let tests = [ ("roundtrip_test"  , roundtrip_test)
+	    ;  ("ping"           , ping_test)
 	    ; ("client_id"      , client_id_test)
 	    ; ("server_info"    , server_info_test)
 	    ; ("list_buckets"   , list_buckets_test)
-	    (*; ("list_keys"      , list_keys_test)*)
+	    ; ("list_keys"      , list_keys_test)
 	    ; ("get_notfound"   , get_notfound_test)
 	    ; ("get_found"      , get_found_test)
 	    ; ("put_return_body", put_return_body_test)

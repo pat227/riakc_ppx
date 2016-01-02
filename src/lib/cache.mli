@@ -46,6 +46,7 @@ module type S =
         val set_tag : string option -> t -> t
         val to_unsafe : t -> Unsafe_Robj.Link.t
         val from_unsafe : Unsafe_Robj.Link.t -> t
+	val show : t -> string
       end
       module type Unsafe_Pair =
         sig
@@ -71,7 +72,7 @@ module type S =
             Pair(Unsafe_Robj.Usermeta)(Usermeta_value).t = {
             key : Key.t;
             value : Usermeta_value.t option;
-        }
+          }
         val create : k:Key.t -> v:Usermeta_value.t option -> t
         val key : t -> Key.t
         val value : t -> Usermeta_value.t option
@@ -134,6 +135,7 @@ module type S =
         val set_last_mod_usec : Int32.t option -> t -> t
         val set_usermeta : Usermeta.t list -> t -> t
         val set_indices : Index.t list -> t -> t
+	val show : t -> string
       end
       type 'a t = {
         contents : Content.t list;
@@ -152,6 +154,7 @@ module type S =
       val set_vclock : string option -> 'a t -> 'b t
       val to_unsafe : 'a t -> [ `No_siblings ] Unsafe_Robj.t
       val from_unsafe : 'a Unsafe_Robj.t -> 'b t
+      val show : 'a t -> string
     end
     val create : conn:conn -> bucket:string -> t
     val list_keys_stream :

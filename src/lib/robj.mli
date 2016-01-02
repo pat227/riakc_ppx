@@ -73,7 +73,7 @@ sig
   val set_last_mod_usec    : Int32.t option -> t -> t
   val set_usermeta         : Usermeta.t list -> t -> t
   val set_indices          : Index.t list -> t -> t
-  include Protobuf_capable.S with type t := t
+(*  include Protobuf_capable.S with type t := t*)
 end
 
   type 'a t
@@ -93,3 +93,4 @@ end
   val set_contents : Content.t list -> 'a t -> [ `Maybe_siblings ] t
   val set_content  : Content.t -> 'a t -> [ `No_siblings ] t
   val set_vclock   : string option -> 'a t -> 'a t 
+  val show         : 'a t -> string

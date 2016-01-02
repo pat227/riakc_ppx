@@ -1,5 +1,5 @@
 open Async.Std
-
+module Log = Mylogging.Log
 module Result = Core.Std.Result
 module Option = Core.Std.Option
 module Deferred = Async.Std.Deferred
@@ -46,6 +46,7 @@ module type S =
         val set_tag : string option -> t -> t
         val to_unsafe : t -> Unsafe_Robj.Link.t
         val from_unsafe : Unsafe_Robj.Link.t -> t
+	val show : t -> string
       end
       module type Unsafe_Pair =
         sig
@@ -134,6 +135,7 @@ module type S =
         val set_last_mod_usec : Int32.t option -> t -> t
         val set_usermeta : Usermeta.t list -> t -> t
         val set_indices : Index.t list -> t -> t
+	val show : t -> string
       end
       type 'a t = {
         contents : Content.t list;
@@ -152,6 +154,7 @@ module type S =
       val set_vclock : string option -> 'a t -> 'b t
       val to_unsafe : 'a t -> [ `No_siblings ] Unsafe_Robj.t
       val from_unsafe : 'a Unsafe_Robj.t -> 'b t
+      val show : 'a t -> string
     end
     val create : conn:conn -> bucket:string -> t
     val list_keys_stream :
@@ -288,6 +291,14 @@ module Make_with_usermeta_index_raw_key
 	  let key = Option.map (Unsafe_Robj.Link.key t) deserialize_key in
 	  let bucket = Unsafe_Robj.Link.bucket t in
 	  let tag = Unsafe_Robj.Link.tag t in {bucket;key;tag}
+
+	let show t =
+	  let bckt = Core.Std.Option.value t.bucket ~default:"None" in
+	  let ky = match t.key with
+	    | Some k -> Key.show k
+	    | None -> "None" in
+	  let tg = Core.Std.Option.value t.tag ~default:"None" in
+	  "Link:Bucket:" ^ bckt ^ " Key:" ^ ky ^ " Tag:" ^ tg;;
       end
  
     module type Unsafe_Pair = sig
@@ -418,6 +429,27 @@ module Make_with_usermeta_index_raw_key
       let set_last_mod_usec lmu t   = { t with last_mod_usec = lmu }
       let set_usermeta u t          = { t with usermeta = u }
       let set_indices i t           = { t with indices = i }
+
+      let show t =
+	let rec helper l acc showfunc =
+	  match l with
+	  | [] -> acc
+	  | h::t -> helper t ((showfunc h) ^ acc) showfunc in
+	let lastmod = match (last_mod t) with
+	  | Some lm ->  Int32.to_string lm
+	  | None -> "None" in
+	let lastmodusec = match (last_mod_usec t) with
+	  | Some lmu -> Int32.to_string lmu
+	  | None -> "None" in
+	"==ROBJ:CONTENT:Value: " ^ (Value.show (value t)) ^
+	  " ContentType:" ^ (Core.Std.Option.value (content_type t) ~default:"None") ^
+	    " Charset:" ^ (Core.Std.Option.value (charset t) ~default:"None") ^
+	      " ContentEncoding:" ^ (Core.Std.Option.value (content_encoding t) ~default:"None") ^
+		" Vtag:" ^ (Core.Std.Option.value (vtag t) ~default:"None") ^
+		  " Links(list):" ^ (helper (links t) "" Link.show) ^
+		    " LastMod:" ^ lastmod ^ " LastModUsed:" ^ lastmodusec ^
+		      (*" Usermeta:" ^ (usermeta t) ^ " Indices:" ^ (indices t)*)
+		      " Deleted:" ^ (Core.Std.Bool.to_string (deleted t)) ^ "==";;
     end
 
     type 'a t = { contents  : Content.t list
@@ -456,6 +488,15 @@ module Make_with_usermeta_index_raw_key
     let from_unsafe t = 
       let contents = List.map Content.from_unsafe (Unsafe_Robj.contents t) in
       set_vclock (Unsafe_Robj.vclock t) (create_siblings contents)
+		 
+    let show t =
+      let rec helper cl acc =
+	match cl with
+	| [] -> acc
+	| h::t -> helper t (Content.show h ^ " | " ^ acc) in
+      "ROBJ:Unchanged: " ^ (Core.Std.Bool.to_string t.unchanged) ^
+	" vclock: " ^ (Core.Std.Option.value t.vclock ~default:"None") ^
+	  " contents_list: " ^ (helper t.contents "");;
   end
 		  
   let create ~conn ~bucket = {conn;bucket}
@@ -466,28 +507,34 @@ module Make_with_usermeta_index_raw_key
 							      
   let with_cache ~host ~port ~bucket f =
     Conn.with_conn host port (fun conn -> (f (create ~conn ~bucket)))
-
+		   
+(*Key.of_string (Protobuf_capable.encode_decode b)) keys)*)
+  (*let d = Protobuf.Decoder.of_bytes (Bytes.of_string b) in*)
+  (*Key.from_protobuf (Protobuf.Decoder.of_string (Protobuf_capable.encode_decode b))) keys)*)
   let list_keys cache =
     Conn.list_keys cache.conn cache.bucket
     >>| function
       | Result.Ok keys ->
-         Result.Ok (List.map (fun (b:string) -> (*Key.of_string (Protobuf_capable.encode_decode b)) keys)*)
-			      (*let d = Protobuf.Decoder.of_bytes (Bytes.of_string b) in*)
-                              Key.from_protobuf (Protobuf.Decoder.of_string (Protobuf_capable.encode_decode b))) keys)
+         Result.Ok (List.map (fun (b:string) ->
+			      let dsk = deserialize_key b in
+			      let _ = print_string ("cache.ml::list_keys dsk:" ^ (Key.show dsk) ^
+					      " from " ^ (Log.hex_of_string b) ^ "\n")
+			      in dsk) keys)
       | Result.Error err ->
          Result.Error err
 
-  let get cache ?(opts = []) (k:Key.t) = Conn.get cache.conn ~opts ~b:cache.bucket (serialize_key k) 
-					 >>| function
-					   | Result.Ok robj_unsafe -> begin
-								      let robj = Robj.from_unsafe robj_unsafe in
-								      if Robj.contents robj = [] && Robj.vclock robj = None then
-									Result.Error `Notfound
-								      else
-									Result.Ok robj 
-								    end
-					   | Result.Error err ->
-					      Result.Error err
+  let get cache ?(opts = []) (k:Key.t) =
+    Conn.get cache.conn ~opts ~b:cache.bucket (serialize_key k) 
+    >>| function
+      | Result.Ok robj_unsafe -> begin				 
+				 let robj = Robj.from_unsafe robj_unsafe in
+				 if Robj.contents robj = [] && Robj.vclock robj = None then
+				   Result.Error `Notfound
+				 else
+				   Result.Ok robj 
+			       end
+      | Result.Error err ->
+	 Result.Error err
 							   
   let put cache ?(opts = []) ?(k:Key.t option) (robj:'a Robj.t) =
     let unsafe_robj = Robj.to_unsafe robj in

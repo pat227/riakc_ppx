@@ -281,6 +281,13 @@ module Index_search = struct
       | Range_string [@key 3] of string_range 
       | Range_int    [@key 4] of int_range [@@deriving protobuf]
 
+    let show t =
+      match t with
+      | Eq_string s -> "Eq_string of " ^ s
+      | Eq_int i -> "Eq_int of " ^ string_of_int i 
+      | Range_string sr -> "Min: " ^ sr.min ^ " Max:" ^ sr.max ^ "return_terms:" ^ (Core.Std.Bool.to_string sr.return_terms)
+      | Range_int ir -> "Min: " ^ (string_of_int ir.min) ^ " Max:" ^ (string_of_int ir.max) ^ "return_terms:" ^ (Core.Std.Bool.to_string ir.return_terms)
+
     let eq_string key =
       Eq_string key
 
@@ -300,6 +307,7 @@ module Index_search = struct
 
     let of_string s = s
     let to_string t = t
+    let show t = to_string t
   end
 
   type t =
