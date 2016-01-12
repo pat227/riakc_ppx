@@ -1,6 +1,9 @@
 module Log = struct
   open Core.Std;;
   open Async.Std;;
+  let nowstring = 
+    let tnow = Core.Std.Time.now () in
+    Core.Std.Time.to_string_abs ~zone:(Core.Std.Time.Zone.of_utc_offset 0) tnow
 
   (*val hex_of_string : 'a -> (?sep:Core.Std.String.t -> Core.Std.String.t -> Core.Std.String.t) Async_kernel.Deferred.t = <fun>  
     Note: Always print 2 chars...do not elide leading zero else hex in unreadable. *)

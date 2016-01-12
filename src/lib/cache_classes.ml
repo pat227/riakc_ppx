@@ -16,13 +16,14 @@ module Default_index = struct
   | Bad_int [@key 5] of string [@key 6]
   | Unknown [@key 7] of string [@key 8] [@@deriving protobuf, show]
 end
+module Default_index_Sc = Convert.Make_serializable_from_protobuf_capable(Default_index)
 
-module type S =
+module type Sc =
   sig
-    module Key : Protobuf_capable.S
-    module Value : Protobuf_capable.S
-    module Usermeta_value : Protobuf_capable.S
-    module Index_value : Protobuf_capable.S
+    module Key : Converter.Serializable
+    module Value : Converter.Serializable
+    module Usermeta_value : Converter.Serializable
+    module Index_value : Converter.Serializable
 
     type conn = Conn.t
     type t = { conn : conn; bucket : string; }
@@ -236,21 +237,20 @@ module type S =
   end
 
 module Make_with_usermeta_index
-	 (Key:Protobuf_capable.S)
-	 (Value:Protobuf_capable.S) 
-	 (Usermeta_value: Protobuf_capable.S) 
-	 (Index_value:Protobuf_capable.S) = struct 
-
+	 (Key:Converter.Serializable)
+	 (Value:Converter.Serializable) 
+	 (Usermeta_value:Converter.Serializable) 
+	 (Index_value:Converter.Serializable) = struct 
   module Key = Key
   module Value = Value
   module Usermeta_value = Usermeta_value
   module Index_value = Index_value
 
-  let serialize_key = (*Key.to_string*) Protobuf_capable.serialize_proto Key.to_protobuf
-  let serialize_value = Protobuf_capable.serialize_proto Value.to_protobuf 
+  let serialize_key = Key.to_encoding
+  let serialize_value = Value.to_encoding
 
-  let deserialize_key = (*Key.of_string*) Protobuf_capable.deserialize_proto Key.from_protobuf
-  let deserialize_value = Protobuf_capable.deserialize_proto Value.from_protobuf
+  let deserialize_key = Key.of_encoding
+  let deserialize_value = Value.of_encoding
 
   type conn = Conn.t 
   type t = {conn:conn;bucket:string} 
@@ -587,26 +587,19 @@ module Make_with_usermeta_index
         Result.Error err
   let bucket_props t = Conn.bucket_props (get_conn t) (get_bucket t)
 end
-(*
-module Conv = Protobuf_capable.Conversion.Make
- *)
+
 module Make_with_usermeta_index
- (Key:Protobuf_capable.S)
- (Value:Protobuf_capable.S) 
- (Usermeta_value: Protobuf_capable.S) 
- (Index_value:Protobuf_capable.S) = 
+ (Key:Converter.Serializable)
+ (Value:Converter.Serializable) 
+ (Usermeta_value:Converter.Serializable) 
+ (Index_value:Converter.Serializable) = 
    Make_with_usermeta_index(Key)(Value)(Usermeta_value)(Index_value)
 
-module Make_with_usermeta(Key:Protobuf_capable.S) (Value:Protobuf_capable.S) (Usermeta_value:Protobuf_capable.S) =
-  Make_with_usermeta_index(Key) (Value) (Usermeta_value) (Default_index)
+module Make_with_usermeta(Key:Converter.Serializable) (Value:Converter.Serializable) (Usermeta_value:Converter.Serializable) =
+  Make_with_usermeta_index(Key) (Value) (Usermeta_value) (Default_index_Sc)
 
 module Make_with_index(Key:Protobuf_capable.S)(Value:Protobuf_capable.S)(Index_value:Protobuf_capable.S) =
   Make_with_usermeta_index(Key)(Value) (Default_usermeta) (Index_value)
-(*
-module Make_with_string_key(Value:Protobuf_capable.S) =
-  Make_with_usermeta_index_raw_key(Core.Std.String)    (*(Protobuf_capables.RawString_Key)*)
-  (Value) (Default_usermeta) (Default_index)
- *)
-module Make(Key:Protobuf_capable.S) (Value:Protobuf_capable.S) =
-  Make_with_usermeta_index_raw_key(Key) (Value) (Default_usermeta) (Default_index)
 
+module Make(Key:Converter.Serializable) (Value:Converter.Serializable) =
+  Make_with_usermeta_index_raw_key(Key) (Value) (Default_usermeta) (Default_index_Sc)

@@ -13,7 +13,7 @@ module State = struct
 end
 
 module String = Protobuf_capables.String
-module StringCache = Caches.StringCache (* Caches.RawStringKeyCache*)
+module StringCache = (* Caches.StringCache*) Caches.RawStringKeyCache
 module Protobuf_capable = Protobuf_capable
 module Rand = struct
   let lowercase = "abcdefghijklmnopqrstuvwxyz"
