@@ -242,9 +242,8 @@ functor
   (Key : Protobuf_capable.S)
     (Value : Protobuf_capable.S)
     (Index_value : Protobuf_capable.S) ->
-
 module type of Make_with_usermeta_index(Key)(Value)(Default_usermeta)(Index_value)
-
+				       
 module Make :
 functor (Key : Protobuf_capable.S) (Value : Protobuf_capable.S) 
 	-> module type of Make_with_usermeta(Key)(Value)(Default_usermeta)

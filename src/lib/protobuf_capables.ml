@@ -5,7 +5,7 @@ module Bytes =
     let from_protobuf d = Protobuf.Decoder.bytes d
     let show = to_string 
   end
-    
+  
 module String = 
   struct
     include String

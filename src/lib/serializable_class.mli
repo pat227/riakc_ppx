@@ -6,10 +6,10 @@
  functions to/from_encoding. This will make using json or any other encoding, 
  such as json, easier to substitute in place of protocol buffers for use with riak.*)
 module Serializable_class : sig
-  type 'a t = < from_encoding : bytes -> 'a ; to_encoding : 'a -> bytes >;;
-  class ['a] serializable_class : (bytes -> 'a) -> ('a -> bytes) -> object
-    method from_encoding : bytes -> 'a
-    method to_encoding : 'a -> bytes
+  type 'a t = < from_encoding : string -> 'a ; to_encoding : 'a -> string >;;
+  class ['a] serializable_class : (string -> 'a) -> ('a -> string) -> object
+    method from_encoding : string -> 'a
+    method to_encoding : 'a -> string
   end 
 end (*= Serializable_class*)
 

@@ -9,14 +9,22 @@ module String = Protobuf_capables.String
 module Bool = Protobuf_capables.Bool
 module Int = Protobuf_capables.Int
 module Default_usermeta = String
-
-module Default_index = struct 
-  type t =   | String [@key 1] of string [@key 2]
-  | Integer [@key 3] of int [@key 4]
-  | Bad_int [@key 5] of string [@key 6]
-  | Unknown [@key 7] of string [@key 8] [@@deriving protobuf, show]
+module Default_usermeta_Sc : sig
+  type t = Default_usermeta.t
+  val to_encoding : t -> string
+  val from_encoding : string -> t
+end = struct
+  include Default_usermeta
+  let to_encoding t = t
+  let from_encoding s = s
+end 
+module Default_index : Protobuf_capable.S = struct 
+  type t = String [@key 1] of string [@key 2]
+	 | Integer [@key 3] of int [@key 4]
+	 | Bad_int [@key 5] of string [@key 6]
+	 | Unknown [@key 7] of string [@key 8] [@@deriving protobuf, show]
 end
-module Default_index_Sc = Convert.Make_serializable_from_protobuf_capable(Default_index)
+module Default_index_Sc = Converter.Make_serializable_from_protobuf_capable(Default_index)
 
 module type Sc =
   sig
@@ -56,7 +64,7 @@ module type Sc =
           val key : t -> string
         end
       module Pair :
-      functor (Unsafe : Unsafe_Pair) (V : Protobuf_capable.S) ->
+      functor (Unsafe : Unsafe_Pair) (V : Converter.Serializable) ->
               sig
                 type t = { key : Key.t; value : V.t option; }
                 val create : k:Key.t -> v:V.t option -> t
@@ -249,8 +257,8 @@ module Make_with_usermeta_index
   let serialize_key = Key.to_encoding
   let serialize_value = Value.to_encoding
 
-  let deserialize_key = Key.of_encoding
-  let deserialize_value = Value.of_encoding
+  let deserialize_key = Key.from_encoding
+  let deserialize_value = Value.from_encoding
 
   type conn = Conn.t 
   type t = {conn:conn;bucket:string} 
@@ -291,14 +299,14 @@ module Make_with_usermeta_index
 	  let key = Option.map (Unsafe_Robj.Link.key t) deserialize_key in
 	  let bucket = Unsafe_Robj.Link.bucket t in
 	  let tag = Unsafe_Robj.Link.tag t in {bucket;key;tag}
-
+(*
 	let show t =
 	  let bckt = Core.Std.Option.value t.bucket ~default:"None" in
 	  let ky = match t.key with
 	    | Some k -> Key.show k
 	    | None -> "None" in
 	  let tg = Core.Std.Option.value t.tag ~default:"None" in
-	  "Link:Bucket:" ^ bckt ^ " Key:" ^ ky ^ " Tag:" ^ tg;;
+	  "Link:Bucket:" ^ bckt ^ " Key:" ^ ky ^ " Tag:" ^ tg;;*)
       end
  
     module type Unsafe_Pair = sig
@@ -307,7 +315,7 @@ module Make_with_usermeta_index
 	val key : t -> string
       end
 
-    module Pair(Unsafe: Unsafe_Pair) (V:Protobuf_capable.S) = struct
+    module Pair(Unsafe: Unsafe_Pair) (V:Converter.Serializable) = struct
       type t = { key : Key.t 
                ; value : V.t option 
 	       }  
@@ -325,14 +333,14 @@ module Make_with_usermeta_index
 	let tnow = Core.Std.Time.now () in
 	let ts = Core.Std.Time.to_string_abs ~zone:(Core.Std.Time.Zone.of_utc_offset 0) tnow in
 	let _ = print_string (ts ^ "cache.ml::to_unsafe() index 315 about to serialize_proto\n") in
-	let value = Option.map (value t) (Protobuf_capable.serialize_proto V.to_protobuf) in
+	let value = Option.map (value t) (V.to_encoding) in
 	{ Unsafe.key; Unsafe.value}
 
       let from_unsafe (t:Unsafe.t) : t =
 	let tnow = Core.Std.Time.now () in
 	let ts = Core.Std.Time.to_string_abs ~zone:(Core.Std.Time.Zone.of_utc_offset 0) tnow in
 	let _ = print_string (ts ^ "cache.ml::from_unsafe() index 320 about to deserialize_proto\n") in
-	let value = Option.map (Unsafe.value t) (Protobuf_capable.deserialize_proto V.from_protobuf) in
+	let value = Option.map (Unsafe.value t) (V.from_encoding) in
 	let key = deserialize_key (Unsafe.key t) in {key;value}
     end
 
@@ -429,7 +437,7 @@ module Make_with_usermeta_index
       let set_last_mod_usec lmu t   = { t with last_mod_usec = lmu }
       let set_usermeta u t          = { t with usermeta = u }
       let set_indices i t           = { t with indices = i }
-
+(*
       let show t =
 	let rec helper l acc showfunc =
 	  match l with
@@ -450,6 +458,7 @@ module Make_with_usermeta_index
 		    " LastMod:" ^ lastmod ^ " LastModUsed:" ^ lastmodusec ^
 		      (*" Usermeta:" ^ (usermeta t) ^ " Indices:" ^ (indices t)*)
 		      " Deleted:" ^ (Core.Std.Bool.to_string (deleted t)) ^ "==";;
+*)
     end
 
     type 'a t = { contents  : Content.t list
@@ -488,7 +497,7 @@ module Make_with_usermeta_index
     let from_unsafe t = 
       let contents = List.map Content.from_unsafe (Unsafe_Robj.contents t) in
       set_vclock (Unsafe_Robj.vclock t) (create_siblings contents)
-		 
+(*		 
     let show t =
       let rec helper cl acc =
 	match cl with
@@ -497,6 +506,7 @@ module Make_with_usermeta_index
       "ROBJ:Unchanged: " ^ (Core.Std.Bool.to_string t.unchanged) ^
 	" vclock: " ^ (Core.Std.Option.value t.vclock ~default:"None") ^
 	  " contents_list: " ^ (helper t.contents "");;
+ *)
   end
 		  
   let create ~conn ~bucket = {conn;bucket}
@@ -517,9 +527,9 @@ module Make_with_usermeta_index
       | Result.Ok keys ->
          Result.Ok (List.map (fun (b:string) ->
 			      let dsk = deserialize_key b in
-			      let _ = print_string ("cache.ml::list_keys dsk:" ^ (Key.show dsk) ^
-					      " from " ^ (Log.hex_of_string b) ^ "\n")
-			      in dsk) keys)
+			      (*let _ = print_string ("cache.ml::list_keys dsk:" ^ (Key.show dsk) ^
+					      " from " ^ (Log.hex_of_string b) ^ "\n")*)
+			      dsk) keys)
       | Result.Error err ->
          Result.Error err
 
@@ -578,7 +588,7 @@ module Make_with_usermeta_index
       t.conn
       ~opts
       ~b:t.bucket
-      ~index:(Protobuf_capable.serialize_proto Index_value.to_protobuf index)
+      ~index:(Index_value.to_encoding index)
       query_type
     >>| function
       | Result.Ok results ->
@@ -588,18 +598,11 @@ module Make_with_usermeta_index
   let bucket_props t = Conn.bucket_props (get_conn t) (get_bucket t)
 end
 
-module Make_with_usermeta_index
- (Key:Converter.Serializable)
- (Value:Converter.Serializable) 
- (Usermeta_value:Converter.Serializable) 
- (Index_value:Converter.Serializable) = 
-   Make_with_usermeta_index(Key)(Value)(Usermeta_value)(Index_value)
-
 module Make_with_usermeta(Key:Converter.Serializable) (Value:Converter.Serializable) (Usermeta_value:Converter.Serializable) =
   Make_with_usermeta_index(Key) (Value) (Usermeta_value) (Default_index_Sc)
 
-module Make_with_index(Key:Protobuf_capable.S)(Value:Protobuf_capable.S)(Index_value:Protobuf_capable.S) =
-  Make_with_usermeta_index(Key)(Value) (Default_usermeta) (Index_value)
+module Make_with_index(Key:Converter.Serializable)(Value:Converter.Serializable)(Index_value:Converter.Serializable) =
+  Make_with_usermeta_index(Key)(Value) (Default_usermeta_Sc) (Index_value)
 
 module Make(Key:Converter.Serializable) (Value:Converter.Serializable) =
-  Make_with_usermeta_index_raw_key(Key) (Value) (Default_usermeta) (Default_index_Sc)
+  Make_with_usermeta_index(Key) (Value) (Default_usermeta_Sc) (Default_index_Sc)

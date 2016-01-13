@@ -1,4 +1,4 @@
-module type Protobuf_capable =
+module type Protobf_capable =
   sig
     type t
     val from_protobuf : Protobuf.Decoder.t -> t
@@ -15,13 +15,15 @@ module type Json_capable =
 module type Serializable =
   sig
     type t
-    val from_encoding : bytes -> t
-    val to_encoding : t -> bytes
+    val from_encoding : string -> t
+    val to_encoding : t -> string
   end
 
-module Make_serializable_from_protobuf_capable : functor
-  (M:Protobuf_capable) -> Serializable with type t := M.t
-    
-module Make_serializable_from_yojson_capable(M:Json_capable) : functor
-  (M:Json_capable) -> Serializable with type t := M.t
+module Make_serializable_from_protobuf_capable :
+functor
+  (M:Protobf_capable) -> Serializable
+							
+module Make_serializable_from_yojson_capable :
+functor
+  (M:Json_capable) -> Serializable 
 

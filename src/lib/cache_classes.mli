@@ -4,6 +4,11 @@ module Deferred = Async.Std.Deferred
 module String = Protobuf_capables.String
 module Int = Protobuf_capables.Int
 module Default_usermeta = String
+module Default_usermeta_Sc : sig
+  type t = Default_usermeta.t
+  val to_encoding : t -> string
+  val from_encoding : string -> t
+end
 module Default_index : sig
   type t =
       String of string
@@ -13,10 +18,9 @@ module Default_index : sig
   val from_protobuf : Protobuf.Decoder.t -> t
   val to_protobuf : t -> Protobuf.Encoder.t -> unit
   val pp : Format.formatter -> t -> unit
-  val show : t -> string
+				      (*val show : t -> string*)
 end
 module Default_index_Sc : Converter.Serializable
-
 
 module type Sc =
   sig
@@ -56,7 +60,7 @@ module type Sc =
           val key : t -> string
         end
       module Pair :
-      functor (Unsafe : Unsafe_Pair) (V : Protobuf_capable.S) ->
+      functor (Unsafe : Unsafe_Pair) (V : Converter.Serializable) ->
               sig
                 type t = { key : Key.t; value : V.t option; }
                 val create : k:Key.t -> v:V.t option -> t
@@ -233,8 +237,8 @@ functor
   (Key : Converter.Serializable)
     (Value : Converter.Serializable)
     (Index_value : Converter.Serializable) ->
-module type of Make_with_usermeta_index(Key)(Value)(Default_usermeta)(Index_value)
+module type of Make_with_usermeta_index(Key)(Value)(Default_usermeta_Sc)(Index_value)
 
 module Make :
 functor (Key : Converter.Serializable) (Value : Converter.Serializable) 
-	-> module type of Make_with_usermeta(Key)(Value)(Default_usermeta)
+	-> module type of Make_with_usermeta(Key)(Value)(Default_usermeta_Sc)

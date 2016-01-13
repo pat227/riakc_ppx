@@ -11,3 +11,5 @@ module StringBoolCache = Cache.Make(String)(Bool)
 module StringIntCache = Cache.Make(String)(Int)
 				  (*module StringPrimitiveCache = Cache.Make_with_string_key(String)*)
 
+module Bytes_class = Cache_classes.Make(Bytes)(Bytes)
+
