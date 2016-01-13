@@ -8,7 +8,7 @@ module type S =
     type t
     val from_protobuf : D.t -> t
     val to_protobuf : t -> E.t -> unit
-    val show : t -> string
+				    (*val show : t -> string*)
   end
 (*
 module type Raw_S =

@@ -9,6 +9,9 @@ module Default_usermeta_Sc : sig
   val to_encoding : t -> string
   val from_encoding : string -> t
 end
+module Default_index : Protobuf_capable.S
+
+(*
 module Default_index : sig
   type t =
       String of string
@@ -18,8 +21,9 @@ module Default_index : sig
   val from_protobuf : Protobuf.Decoder.t -> t
   val to_protobuf : t -> Protobuf.Encoder.t -> unit
   val pp : Format.formatter -> t -> unit
-				      (*val show : t -> string*)
+  val show : t -> string
 end
+		       *)
 module Default_index_Sc : Converter.Serializable
 
 module type Sc =
@@ -51,7 +55,7 @@ module type Sc =
         val set_tag : string option -> t -> t
         val to_unsafe : t -> Unsafe_Robj.Link.t
         val from_unsafe : Unsafe_Robj.Link.t -> t
-	val show : t -> string
+						  (*val show : t -> string*)
       end
       module type Unsafe_Pair =
         sig
@@ -140,7 +144,7 @@ module type Sc =
         val set_last_mod_usec : Int32.t option -> t -> t
         val set_usermeta : Usermeta.t list -> t -> t
         val set_indices : Index.t list -> t -> t
-	val show : t -> string
+						 (*val show : t -> string*)
       end
       type 'a t = {
         contents : Content.t list;
@@ -159,7 +163,7 @@ module type Sc =
       val set_vclock : string option -> 'a t -> 'b t
       val to_unsafe : 'a t -> [ `No_siblings ] Unsafe_Robj.t
       val from_unsafe : 'a Unsafe_Robj.t -> 'b t
-      val show : 'a t -> string
+					       (*val show : 'a t -> string*)
     end
     val create : conn:conn -> bucket:string -> t
     val list_keys_stream :

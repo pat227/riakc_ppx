@@ -106,7 +106,7 @@ end
 
 module Nested(T:Protobuf_capable.S) = struct
   type t = { value: T.t [@key 1]} [@@deriving protobuf]
-  let show t = "Response:Nested::Value:" ^ T.show t
+				  (*let show t = "Response:Nested::Value:" ^ T.show t*)
 end
 
 let bucket_props payload = let open Result.Monad_infix in
