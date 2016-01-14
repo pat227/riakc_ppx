@@ -3,15 +3,18 @@ module D = Protobuf.Decoder
 module Versioned = Versioned.Versioned
 
 module Serializable_class = struct
-  
+  (*So long as decode_a and endode_a can do a roundtrip in any encoding scheme
+    this class should work for protobuf, json, or any encoding scheme.*)
   class ['a] serializable_class decode_a encode_a = object
     method from_encoding (b:string) : 'a =
       decode_a b
     method to_encoding (v:'a) : string =
       encode_a v
   end
-  type 'a t = 'a serializable_class  
 
+  type 'a t = 'a serializable_class  
+  (*Ditto as above, but everything is wrapped in a Versioned.Versioned.t struct and then
+    the Versioned.Versioned.t struct is encoded using protobuf.*)
   class ['a] protobuf_capable_class_version_wrapped decode_a encode_a = object(self)
     inherit ['a] serializable_class decode_a encode_a
     method private serialize_version version to_protobuf (v:'a) =
@@ -43,5 +46,4 @@ module Serializable_class = struct
     method to_encoding (v:'a) : string =
       self#serialize_proto encode_a v
   end
-
 end

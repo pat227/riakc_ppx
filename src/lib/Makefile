@@ -29,5 +29,7 @@ conn:	conn.mli conn.ml response opts request
 	ocamlfind ocamlc -g -c -principal -safe-string -thread -package core,async,ppx_deriving_protobuf conn.mli conn.ml
 cache_classes:	versioned converter classes mylogger pbcapables pbcapable conn cache_classes.ml cache_classes.mli
 	ocamlfind ocamlc -g -c -principal -safe-string -thread -package core,async,ppx_deriving,ppx_deriving_protobuf,ppx_deriving.show cache_classes.mli cache_classes.ml
+serializables:	cache_classes serializables.ml
+	ocamlfind ocamlc -g -c -principal -safe-string -thread -package core,ppx_deriving_protobuf serializables.ml
 clean:
 	rm *.cmi *.cmo *.o
