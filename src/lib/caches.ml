@@ -5,11 +5,7 @@ module BytesIntCache = Cache.Make(Bytes)(Int)
 module IntBytesCache = Cache.Make(Int)(Bytes)
 module IntBoolCache = Cache.Make(Int)(Bool)
 module StringCache = Cache.Make(String)(String)
-(*module RawStringKeyCache = Cache.Make_with_string_key(String)*)
-module RawStringKeyCache = Cache.Make(RawString_Key)(String)
 module StringBoolCache = Cache.Make(String)(Bool)
 module StringIntCache = Cache.Make(String)(Int)
-				  (*module StringPrimitiveCache = Cache.Make_with_string_key(String)*)
 
-module Bytes_class = Cache_classes.Make(Bytes)(Bytes)
-
+module Bytes_class = Cache_classes.Make(Converter.Make_serializable_from_protobuf_capable(Bytes))(Converter.Make_serializable_from_protobuf_capable(Bytes))

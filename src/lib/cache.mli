@@ -13,7 +13,7 @@ module Default_index : sig
   val from_protobuf : Protobuf.Decoder.t -> t
   val to_protobuf : t -> Protobuf.Encoder.t -> unit
   val pp : Format.formatter -> t -> unit
-  val show : t -> string
+				      (*val show : t -> string*)
 end
 
 
@@ -46,7 +46,7 @@ module type S =
         val set_tag : string option -> t -> t
         val to_unsafe : t -> Unsafe_Robj.Link.t
         val from_unsafe : Unsafe_Robj.Link.t -> t
-	val show : t -> string
+						  (*val show : t -> string*)
       end
       module type Unsafe_Pair =
         sig
@@ -135,7 +135,7 @@ module type S =
         val set_last_mod_usec : Int32.t option -> t -> t
         val set_usermeta : Usermeta.t list -> t -> t
         val set_indices : Index.t list -> t -> t
-	val show : t -> string
+						 (*val show : t -> string*)
       end
       type 'a t = {
         contents : Content.t list;
@@ -154,7 +154,7 @@ module type S =
       val set_vclock : string option -> 'a t -> 'b t
       val to_unsafe : 'a t -> [ `No_siblings ] Unsafe_Robj.t
       val from_unsafe : 'a Unsafe_Robj.t -> 'b t
-      val show : 'a t -> string
+					       (*val show : 'a t -> string*)
     end
     val create : conn:conn -> bucket:string -> t
     val list_keys_stream :
@@ -207,7 +207,7 @@ module type S =
         Deferred.t
     val bucket_props : t -> (Response.Props.t, [> Conn.error | Response.error ]) Deferred.Result.t
   end
-
+(*
 module Make_with_usermeta_index_raw_key :
 functor
   (Key : Protobuf_capable.S) (Value : Protobuf_capable.S) (Usermeta_value : Protobuf_capable.S) (Index_value : Protobuf_capable.S) -> S
@@ -216,7 +216,7 @@ functor
     type Value.t = Value.t and 
     type Usermeta_value.t = Usermeta_value.t and
     type Index_value.t = Index_value.t
-
+ *)
     
 module Make_with_usermeta_index :
 functor

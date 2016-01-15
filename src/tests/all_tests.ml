@@ -13,7 +13,7 @@ module State = struct
 end
 
 module String = Protobuf_capables.String
-module StringCache = (* Caches.StringCache*) Caches.RawStringKeyCache
+module StringCache = Caches.StringCache
 module Protobuf_capable = Protobuf_capable
 module Rand = struct
   let lowercase = "abcdefghijklmnopqrstuvwxyz"
@@ -110,7 +110,6 @@ let get_found_test c =
   let robj =
     StringCache.Robj.create
       (StringCache.Robj.Content.create "foobar2") in
-  let _ = print_string (StringCache.Robj.show robj) in
   let key = (*"UjtaiBbuNU" Rand.key 10*) "klmnopqrst" in
   StringCache.put c ~k:key robj >>= fun (_, _) ->
   let span = Core.Std.Time.Span.of_int_sec 3 in
