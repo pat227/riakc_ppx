@@ -31,5 +31,7 @@ cache_classes:	versioned converter classes mylogger pbcapables pbcapable conn ca
 	ocamlfind ocamlc -g -c -principal -safe-string -thread -package core,async,ppx_deriving,ppx_deriving_protobuf,ppx_deriving.show cache_classes.mli cache_classes.ml
 serializables:	cache_classes serializables.ml
 	ocamlfind ocamlc -g -c -principal -safe-string -thread -package core,yojson,ppx_deriving_protobuf,ppx_deriving_yojson serializables.ml
+caches:	caches.ml serializables
+	ocamlfind ocamlc -g -c -principal -safe-string -thread -package core,yojson,ppx_deriving_protobuf,ppx_deriving_yojson caches.ml
 clean:
 	rm *.cmi *.cmo *.o

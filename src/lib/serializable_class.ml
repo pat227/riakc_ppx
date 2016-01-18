@@ -12,7 +12,7 @@ module Serializable_class = struct
       encode_a v
   end
 
-  type 'a t = 'a serializable_class  
+  type 'a t = 'a serializable_class
   (*Ditto as above, but everything is wrapped in a Versioned.Versioned.t struct and then
     the Versioned.Versioned.t struct is encoded using protobuf.*)
   class ['a] protobuf_capable_class_version_wrapped decode_a encode_a = object(self)
