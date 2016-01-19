@@ -56,7 +56,7 @@ module Make_serializable_from_protobuf_capable_version_wrapped
   
 end
 
-(*Syntactically heavier use of functor*)
+(*Syntactically heavier use of functor
 module Make_serializable_from_protobuf_capable_version_wrapped2
 	 (M:Protobf_capable) = struct
 
@@ -90,3 +90,4 @@ module Make_serializable_from_protobuf_capable_version_wrapped2
   let to_encoding (v:'a) : string =
     serialize_proto M.to_protobuf v
 end
+ *)
