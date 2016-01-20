@@ -8,6 +8,7 @@
  use with riak. *)
 module Serializable_class : sig
   type 'a t = < from_encoding : string -> 'a ; to_encoding : 'a -> string >;;
+					
   class
     ['a] serializable_class :
       (string -> 'a) -> ('a -> string) ->
@@ -22,7 +23,27 @@ module Serializable_class : sig
 	method from_encoding : string -> 'a
 	method to_encoding : 'a -> string
       end
-end (*= Serializable_class*)
+end
+module Serializable_class2 : sig
+  (*  type 'a t = < from_pb : Protobuf.Decoder.t -> 'a ; to_pb : 'a -> Protobuf.Encoder.t -> unit >;;*)
+  type 'a t = < from_encoding : string -> 'a ; to_encoding : 'a -> string >;;				      						   
+  class
+    ['a] serializable_from_pb_capable :
+      (Protobuf.Decoder.t -> 'a) ->
+      ('a -> Protobuf.Encoder.t -> unit) ->
+      object
+	  method from_encoding : string -> 'a
+	  method to_encoding : 'a -> string					
+      end
+  class
+    ['a] protobuf_capable_class_version_wrapped :
+      (Protobuf.Decoder.t -> 'a) ->
+      ('a -> Protobuf.Encoder.t -> unit) ->
+      object
+	method from_encoding : string -> 'a
+	method to_encoding : 'a -> string					
+      end
+end 
 
 (*Let's also try this with a module and functors
 module Serializable : sig

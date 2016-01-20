@@ -1,10 +1,32 @@
-module Serializable_class = Serializable_class.Serializable_class
-open Serializable_class
+module Serializable_class2 = Serializable_class.Serializable_class2
+open Serializable_class2
 (*Given any protobuf capable type t -- in its own module -- run it 
  through Converter.Make_serializable_from_protobuf_capable functor 
  and then create either a versioned.t wrapped class or a non-version.t
  wrapped class. Also possible to do this for Yojson or any other 
  encoding scheme.*)
+
+module String_pb_capable = 
+  struct
+    include String
+    let to_protobuf t e = Protobuf.Encoder.bytes (Bytes.of_string t) e
+    let from_protobuf d = Bytes.to_string (Protobuf.Decoder.bytes d)
+    let sc = new serializable_from_pb_capable from_protobuf to_protobuf
+    let from_encoding (b:string) = sc#from_encoding b
+    let to_encoding v = sc#to_encoding v
+  end
+
+module String_pb_capable_versioned = 
+  struct
+    include String
+    let to_protobuf t e = Protobuf.Encoder.bytes (Bytes.of_string t) e
+    let from_protobuf d = Bytes.to_string (Protobuf.Decoder.bytes d)   
+    let sc = new protobuf_capable_class_version_wrapped from_protobuf to_protobuf
+    let from_encoding (b:string) = sc#from_encoding b
+    let to_encoding v = sc#to_encoding v
+  end
+
+(*
 module Bytes_pb_capable =
   struct
     module Bytes_s = Converter.Make_serializable_from_protobuf_capable(Protobuf_capables.Bytes)
@@ -22,24 +44,6 @@ module Bytes_pb_capable_versioned =
     let from_encoding (b:string) = sc#from_encoding b
     let to_encoding v = sc#to_encoding v
 end
-
-module String_pb_capable = 
-  struct
-    module String_s = Converter.Make_serializable_from_protobuf_capable(Protobuf_capables.String)
-    type t = String_s.t
-    let sc = new serializable_class String_s.from_encoding String_s.to_encoding
-    let from_encoding (b:string) = sc#from_encoding b
-    let to_encoding v = sc#to_encoding v
-  end
-
-module String_pb_capable_versioned = 
-  struct
-    module String_s = Converter.Make_serializable_from_protobuf_capable(Protobuf_capables.String)
-    type t = String_s.t
-    let sc = new protobuf_capable_class_version_wrapped String_s.from_encoding String_s.to_encoding
-    let from_encoding (b:string) = sc#from_encoding b
-    let to_encoding v = sc#to_encoding v
-  end
 
 module Bool_pb_capable =
   struct
@@ -94,3 +98,4 @@ module Float_pb_capable_versioned =
     let from_encoding (b:string) = sc#from_encoding b
     let to_encoding v = sc#to_encoding v
   end
+ *)
