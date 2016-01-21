@@ -20,28 +20,29 @@ let rec read_str r pos s =
       Deferred.return (Error `Bad_conn)
 
 let parse_length preamble =
-  let tnow = Core.Std.Time.now () in
+  (*let tnow = Core.Std.Time.now () in
   let ts = Core.Std.Time.to_string_abs ~zone:(Core.Std.Time.Zone.of_utc_offset 0) tnow in
-  let _ = print_string (ts ^ "conn.ml::parse_length() preamble:" ^ (Log.hex_of_string preamble) ^ "\n") in 
+  let _ = print_string (ts ^ "conn.ml::parse_length() preamble:" ^ (Log.hex_of_string preamble) ^ "\n") in *)
   Deferred.return (Response.parse_length preamble)
 
 let read_payload r preamble =
-  let tnow = Core.Std.Time.now () in
+  (*let tnow = Core.Std.Time.now () in
   let ts = Core.Std.Time.to_string_abs ~zone:(Core.Std.Time.Zone.of_utc_offset 0) tnow in
-  let open Deferred.Result.Monad_infix in
   let _ = print_string (ts ^ "conn.ml::read_payload()\n") in 
+  *)
+  let open Deferred.Result.Monad_infix in
   parse_length preamble >>= fun resp_len ->
   let payload = String.create resp_len in
   read_str r 0 payload
 
 let rec read_response r f c =
-  let tnow = Core.Std.Time.now () in
-  let ts = Core.Std.Time.to_string_abs ~zone:(Core.Std.Time.Zone.of_utc_offset 0) tnow in
+  (*let tnow = Core.Std.Time.now () in
+  let ts = Core.Std.Time.to_string_abs ~zone:(Core.Std.Time.Zone.of_utc_offset 0) tnow in*)
   let open Deferred.Result.Monad_infix in
   let preamble = String.create 4 in
   read_str r 0 preamble       >>= fun _ ->
   read_payload r preamble     >>= fun payload ->
-  let _ = print_string (ts ^ "conn.ml::read_response() payload:" ^ (Log.hex_of_string payload) ^ "\n") in 
+  (*let _ = print_string (ts ^ "conn.ml::read_response() payload:" ^ (Log.hex_of_string payload) ^ "\n") in *)
   Deferred.return (f payload) >>= function
     | Response.More resp ->
       let open Deferred.Monad_infix in
@@ -53,11 +54,11 @@ let rec read_response r f c =
       Deferred.return (Ok ())
 
 let do_request_stream t c g f =
-  let tnow = Core.Std.Time.now () in
-  let ts = Core.Std.Time.to_string_abs ~zone:(Core.Std.Time.Zone.of_utc_offset 0) tnow in
+  (*let tnow = Core.Std.Time.now () in
+  let ts = Core.Std.Time.to_string_abs ~zone:(Core.Std.Time.Zone.of_utc_offset 0) tnow in*)
   let open Deferred.Result.Monad_infix in
   Deferred.return (g ()) >>= fun request ->
-  let _ = print_string (ts ^ "conn.ml::do_request_stream() request:" ^ (Log.hex_of_string request) ^ "\n") in 
+  (*let _ = print_string (ts ^ "conn.ml::do_request_stream() request:" ^ (Log.hex_of_string request) ^ "\n") in *)
   Writer.write t.w request;
   read_response t.r f c
 
@@ -207,11 +208,11 @@ let get t ?(opts = []) ~b k =
       Error err)
 
 let put t ?(opts = []) ~b ?k robj =
-  let tnow = Core.Std.Time.now () in
-  let ts = Core.Std.Time.to_string_abs ~zone:(Core.Std.Time.Zone.of_utc_offset 0) tnow in
+(*  let tnow = Core.Std.Time.now () in
+  let ts = Core.Std.Time.to_string_abs ~zone:(Core.Std.Time.Zone.of_utc_offset 0) tnow in*)
 (*  let p_of_o = Opts.Put.put_of_opts opts ~b ~k robj in
   let pb_of_put = Opts.Put.to_protobuf p_of_o in*)
-  let _ = print_string (ts ^ "conn.ml::put with value:" (*^ (Log.hex_of_string pb_of_put)*) ^ " \n") in
+  (*let _ = print_string (ts ^ "conn.ml::put with value:" (*^ (Log.hex_of_string pb_of_put)*) ^ " \n") in*)
   do_request
     t
     (Request.put (Opts.Put.put_of_opts opts ~b ~k robj))

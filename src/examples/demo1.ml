@@ -4,7 +4,7 @@
 open Core.Std
 open Async.Std
 
-module StringCache = Caches.StringCache
+module StringCache = Caches.String_class_cache
 
 (*
  * Take a string of bytes and convert them to hex string

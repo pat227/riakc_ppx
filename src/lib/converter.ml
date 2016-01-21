@@ -23,7 +23,7 @@ module type Serializable =
     val to_encoding : t -> string
   end
 
-(*forgot: we lose all the functions of module M if we go this route.*)
+(*forgot: we lose all the functions of module M if we specify Serializable as signature.*)
 module Make_serializable_from_protobuf_capable
 	 (M:Protobf_capable) = struct
   include M

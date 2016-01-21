@@ -1,4 +1,5 @@
 open Serializables
+(*
 open Protobuf_capables
 module BytesCache = Cache.Make(Bytes)(Bytes)
 module BytesBoolCache = Cache.Make(Bytes)(Bool)
@@ -8,6 +9,7 @@ module IntBoolCache = Cache.Make(Int)(Bool)
 module StringCache = Cache.Make(String)(String)
 module StringBoolCache = Cache.Make(String)(Bool)
 module StringIntCache = Cache.Make(String)(Int)
+ *)
 (*
 module Bytes_class_cache = Cache_classes.Make(Bytes_pb_capable)(Bytes_pb_capable)
 module BytesBool_class_cache = Cache_classes.Make(Bytes_pb_capable)(Bool_pb_capable)

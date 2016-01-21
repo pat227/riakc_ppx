@@ -79,7 +79,10 @@ module Serializable_class = struct
       self#serialize_proto encode_a v
   end
 end
-
+(*In order to avoid using a functor elsewhere, this class
+accepts any module with from or to protobuf functions that
+operate on Encoders or Decoders and duplicates some codeto provide
+the from_encoding and to_encoding functions.*)
 module Serializable_class2 = struct
   class ['a] serializable_from_pb_capable frompb topb = object
     method from_encoding (b:string) : 'a =
@@ -138,5 +141,4 @@ module Serializable_class2 = struct
     method to_encoding (v:'a) : string =
       self#serialize_proto super#to_encoding v
   end
-
 end

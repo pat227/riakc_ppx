@@ -1,16 +1,19 @@
 module Serializable_class2 = Serializable_class.Serializable_class2
 open Serializable_class2
-(*Given any protobuf capable type t -- in its own module -- run it 
+(*Originally thought that given any protobuf capable type t -- in its own module -- run it 
  through Converter.Make_serializable_from_protobuf_capable functor 
  and then create either a versioned.t wrapped class or a non-version.t
  wrapped class. Also possible to do this for Yojson or any other 
- encoding scheme.*)
+ encoding scheme. But that doesnt work; forgot we lose all the functions
+ of the type t that we might need. Must include the type, and provide 
+ the added functions, namely from/to_protobuf and from/to_encoding
+ which are built atop from/to_protobuf.*)
 
 module String_pb_capable = 
   struct
     include String
-    let to_protobuf t e = Protobuf.Encoder.bytes (Bytes.of_string t) e
-    let from_protobuf d = Bytes.to_string (Protobuf.Decoder.bytes d)
+    let to_protobuf t e = Protobuf.Encoder.of_bytes e (Bytes.of_string t)
+    let from_protobuf d = Bytes.to_string (Protobuf.Decoder.to_bytes d ())
     let sc = new serializable_from_pb_capable from_protobuf to_protobuf
     let from_encoding (b:string) = sc#from_encoding b
     let to_encoding v = sc#to_encoding v
@@ -19,8 +22,8 @@ module String_pb_capable =
 module String_pb_capable_versioned = 
   struct
     include String
-    let to_protobuf t e = Protobuf.Encoder.bytes (Bytes.of_string t) e
-    let from_protobuf d = Bytes.to_string (Protobuf.Decoder.bytes d)   
+    let to_protobuf t e = Protobuf.Encoder.of_bytes e (Bytes.of_string t)
+    let from_protobuf d = Bytes.to_string (Protobuf.Decoder.to_bytes d ())
     let sc = new protobuf_capable_class_version_wrapped from_protobuf to_protobuf
     let from_encoding (b:string) = sc#from_encoding b
     let to_encoding v = sc#to_encoding v

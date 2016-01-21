@@ -48,11 +48,11 @@ let run mc mc_payload f =
     function
     | (p_mc, payload) when p_mc = mc ->
     begin
-      if mc = '\x0A' then
+      (*if mc = '\x0A' then
 	let tnow = Core.Std.Time.now () in
 	let ts = Core.Std.Time.to_string_abs ~zone:(Core.Std.Time.Zone.of_utc_offset 0) tnow in
 	print_string (ts ^ " response.ml:got payload: " ^ (Log.hex_of_string (Bitstring.string_of_bitstring payload)))
-      else ();
+      else ();*)
       let decoder = Protobuf.Decoder.of_string (Bitstring.string_of_bitstring payload) in
       let r = f decoder in
       Result.Ok r
@@ -164,9 +164,9 @@ let get payload =
   run '\x0A' payload Get.from_protobuf >>= fun (c, vclock, unchanged) ->
   let t_ = (c, vclock, unchanged) in
   let gs = Get.show t_ in
-  let tnow = Core.Std.Time.now () in
+  (*let tnow = Core.Std.Time.now () in
   let ts = Core.Std.Time.to_string_abs ~zone:(Core.Std.Time.Zone.of_utc_offset 0) tnow in
-  let _ = print_string (ts ^ "response.ml:get:show:" ^ gs) in
+  let _ = print_string (ts ^ "response.ml:get:show:" ^ gs) in*)
   Result.Ok (Done (Robj.of_pb c vclock unchanged))
 
 module Put = struct

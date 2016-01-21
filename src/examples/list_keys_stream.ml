@@ -1,7 +1,7 @@
 open Core.Std
 open Async.Std
 
-module StringCache = Caches.StringCache
+module StringCache = Caches.String_class_cache
 
 let option_to_string = function
   | Some v -> v

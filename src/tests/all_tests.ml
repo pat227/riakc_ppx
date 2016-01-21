@@ -43,16 +43,16 @@ let assert_cond msg = function
     printf "Error: %s\n" msg;
     Deferred.return (Error `Assert_failed)
   end
-(*
+
 let roundtrip_test c =
   let k = "abcdefghij" in
-  let serialized_k = Protobuf_capable.serialize_proto String.to_protobuf k in
-  let deserialized_k = Protobuf_capable.deserialize_proto String.from_protobuf serialized_k in
+  let serialized_k = StringCache.Key.to_encoding k in
+  let deserialized_k = StringCache.Key.from_encoding serialized_k in
   let b1 = Bytes.of_string k in
   let b2 = Bytes.of_string deserialized_k in
   let _ = print_string ("k:" ^ k ^ "  |serialized_k:" ^ serialized_k ^ "  |deserialized_k:" ^ deserialized_k ^ "\n") in
   assert_cond "Roundtrip failed." ((Bytes.compare b1 b2) = 0);;
- *)
+
 let ping_test c =
   Rconn.ping (StringCache.get_conn c) >>= fun _ ->
   Deferred.return (Ok ())
@@ -137,8 +137,8 @@ let put_return_body_test c =
 (*
 let tests = [("roundtrip_test", roundtrip_test)]
  *)
-let tests = [ (* ("roundtrip_test"  , roundtrip_test)
-  ;*) ("ping"           , ping_test)
+let tests = [ ("roundtrip_test"  , roundtrip_test)
+	    ; ("ping"           , ping_test)
 	    ; ("client_id"      , client_id_test)
 	    ; ("server_info"    , server_info_test)
 	    ; ("list_buckets"   , list_buckets_test)
