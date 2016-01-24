@@ -1,5 +1,5 @@
-module Serializable_class2 = Serializable_class.Serializable_class2
-open Serializable_class2
+module Serializable_class = Serializable_class.Serializable_class
+open Serializable_class
 (*Originally thought that given any protobuf capable type t -- in its own module -- run it 
  through Converter.Make_serializable_from_protobuf_capable functor 
  and then create either a versioned.t wrapped class or a non-version.t
@@ -29,76 +29,109 @@ module String_pb_capable_versioned =
     let to_encoding v = sc#to_encoding v
   end
 
-(*
 module Bytes_pb_capable =
   struct
-    module Bytes_s = Converter.Make_serializable_from_protobuf_capable(Protobuf_capables.Bytes)
-    type t = Bytes_s.t
-    let sc = new serializable_class Bytes_s.from_encoding Bytes_s.to_encoding
+    include Bytes
+    let to_protobuf t e = Protobuf.Encoder.bytes t e
+    let from_protobuf d = Protobuf.Decoder.bytes d
+    let sc = new serializable_from_pb_capable from_protobuf to_protobuf
     let from_encoding (b:string) = sc#from_encoding b
     let to_encoding v = sc#to_encoding v
   end
 
 module Bytes_pb_capable_versioned =
   struct
-    module Bytes_s = Converter.Make_serializable_from_protobuf_capable(Protobuf_capables.Bytes)
-    type t = Bytes_s.t
-    let sc = new protobuf_capable_class_version_wrapped Bytes_s.from_encoding Bytes_s.to_encoding;;
+    include Bytes
+    let to_protobuf t e = Protobuf.Encoder.bytes t e
+    let from_protobuf d = Protobuf.Decoder.bytes d
+    let sc = new protobuf_capable_class_version_wrapped from_protobuf to_protobuf
     let from_encoding (b:string) = sc#from_encoding b
     let to_encoding v = sc#to_encoding v
 end
 
 module Bool_pb_capable =
   struct
-    module Bool_s = Converter.Make_serializable_from_protobuf_capable(Protobuf_capables.Bool)
-    type t = Bool_s.t
-    let sc = new serializable_class Bool_s.from_encoding Bool_s.to_encoding
+    include Core.Std.Bool
+    type bool_t = private bool [@@deriving protobuf]
+    let to_protobuf = bool_t_to_protobuf
+    let from_protobuf = bool_t_from_protobuf
+    let sc = new serializable_from_pb_capable from_protobuf to_protobuf
     let from_encoding (b:string) = sc#from_encoding b
     let to_encoding v = sc#to_encoding v
   end
 
 module Bool_pb_capable_versioned =
   struct
-    module Bool_s = Converter.Make_serializable_from_protobuf_capable(Protobuf_capables.Bool)
-    type t = Bool_s.t
-    let sc = new protobuf_capable_class_version_wrapped Bool_s.from_encoding Bool_s.to_encoding
+    include Core.Std.Bool
+    type bool_t = private bool [@@deriving protobuf]
+    let to_protobuf = bool_t_to_protobuf
+    let from_protobuf = bool_t_from_protobuf
+    let sc = new protobuf_capable_class_version_wrapped from_protobuf to_protobuf
     let from_encoding (b:string) = sc#from_encoding b
     let to_encoding v = sc#to_encoding v
   end
     
 module Int_pb_capable =
   struct
-    module Int_s = Converter.Make_serializable_from_protobuf_capable(Protobuf_capables.Int)
-    type t = Int_s.t
-    let sc = new serializable_class Int_s.from_encoding Int_s.to_encoding
+    include Core.Std.Int
+    let to_protobuf t e = Protobuf.Encoder.varint (Int64.of_int t) e
+    let from_protobuf d = Int64.to_int (Protobuf.Decoder.varint d)
+    let sc = new serializable_from_pb_capable from_protobuf to_protobuf
     let from_encoding (b:string) = sc#from_encoding b
     let to_encoding v = sc#to_encoding v
   end
 
 module Int_pb_capable_versioned =
   struct
-    module Int_s = Converter.Make_serializable_from_protobuf_capable(Protobuf_capables.Int)
-    type t = Int_s.t
-    let sc = new protobuf_capable_class_version_wrapped Int_s.from_encoding Int_s.to_encoding
+    include Core.Std.Int
+    let to_protobuf t e = Protobuf.Encoder.varint (Int64.of_int t) e
+    let from_protobuf d = Int64.to_int (Protobuf.Decoder.varint d)
+    let sc = new protobuf_capable_class_version_wrapped from_protobuf to_protobuf
     let from_encoding (b:string) = sc#from_encoding b
     let to_encoding v = sc#to_encoding v
   end
 
 module Float_pb_capable =
   struct
-    module Float_s = Converter.Make_serializable_from_protobuf_capable(Protobuf_capables.Float)
-    type t = Float_s.t
-    let sc = new serializable_class Float_s.from_encoding Float_s.to_encoding
+    include Core.Std.Float
+    type float_t = private float [@@deriving protobuf]
+    let to_protobuf = float_t_to_protobuf
+    let from_protobuf = float_t_from_protobuf
+    let sc = new serializable_from_pb_capable from_protobuf to_protobuf
     let from_encoding (b:string) = sc#from_encoding b
     let to_encoding v = sc#to_encoding v
   end
 
 module Float_pb_capable_versioned =
   struct
-    module Float_s = Converter.Make_serializable_from_protobuf_capable(Protobuf_capables.Float)
-    type t = Float_s.t
-    let sc = new protobuf_capable_class_version_wrapped Float_s.from_encoding Float_s.to_encoding
+    include Core.Std.Float
+    type float_t = private float [@@deriving protobuf]
+    let to_protobuf = float_t_to_protobuf
+    let from_protobuf = float_t_from_protobuf
+    let sc = new protobuf_capable_class_version_wrapped from_protobuf to_protobuf
     let from_encoding (b:string) = sc#from_encoding b
     let to_encoding v = sc#to_encoding v
   end
- *)
+
+module String_json_capable = 
+  struct
+    include String
+    type string_t = string [@@deriving yojson]
+    let to_yojson = string_t_to_yojson
+    let from_yojson = string_t_of_yojson
+    let sc = new serializable_from_json_capable from_yojson to_yojson
+    let from_encoding (b:string) = sc#from_encoding b
+    let to_encoding v = sc#to_encoding v
+  end
+
+module String_json_capable_versioned = 
+  struct
+    include String
+    type string_t = string [@@deriving yojson]
+    let to_yojson = string_t_to_yojson
+    let from_yojson = string_t_of_yojson
+    let sc = new serializable_from_json_capable_version_wrapped from_yojson to_yojson
+    let from_encoding (b:string) = sc#from_encoding b
+    let to_encoding v = sc#to_encoding v
+  end
+

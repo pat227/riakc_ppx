@@ -1,21 +1,21 @@
 module Versioned = Versioned.Versioned
-module Serializable_class = Serializable_class.Serializable_class
+(*module Serializable_class = Serializable_class.Serializable_class
 open Serializable_class
-
+ *)
 module type Protobf_capable =
   sig
     type t
     val from_protobuf : Protobuf.Decoder.t -> t
     val to_protobuf : t -> Protobuf.Encoder.t -> unit
   end
-       (*
+
 module type Json_capable =
   sig
     type t 
     val to_yojson : t -> Yojson.Safe.json
     val of_yojson : Yojson.Safe.json -> [ `Error of string | `Ok of t ]
   end
-	*)
+
 module type Serializable =
   sig
     type t
@@ -35,11 +35,10 @@ module Make_serializable_from_protobuf_capable
     M.to_protobuf t e;
     Protobuf.Encoder.to_string e;;
 end
-(*
+
 module Make_serializable_from_yojson_capable
 	 (M:Json_capable) = struct
   include M
-  (*type t = M.t*)
   let from_encoding (b:string)  =
     let open Yojson in
     let j = Yojson.Safe.from_string b in
@@ -53,7 +52,7 @@ module Make_serializable_from_yojson_capable
     let j = M.to_yojson t in
     Yojson.Safe.to_string j
 end
-			    *)
+
 (*
 module Make_serializable_from_protobuf_capable_version_wrapped
 	 (M:Protobf_capable) = struct

@@ -7,16 +7,7 @@ module type S =
     type t
     val from_protobuf : D.t -> t
     val to_protobuf : t -> E.t -> unit
-				    (*val show : t -> string*)
   end
-(*
-module type Raw_S =
-  sig
-    type t
-    val to_string : t -> string
-    val of_string : string -> t
-  end
- *)
 (* The internal protocol version *)
 let proto_version = 0
 

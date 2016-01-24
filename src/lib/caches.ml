@@ -1,6 +1,6 @@
 open Serializables
-(*
 open Protobuf_capables
+(*These use cache.ml using Protobuf_capable; all are wrapped in a version struct.*)
 module BytesCache = Cache.Make(Bytes)(Bytes)
 module BytesBoolCache = Cache.Make(Bytes)(Bool)
 module BytesIntCache = Cache.Make(Bytes)(Int)
@@ -9,26 +9,26 @@ module IntBoolCache = Cache.Make(Int)(Bool)
 module StringCache = Cache.Make(String)(String)
 module StringBoolCache = Cache.Make(String)(Bool)
 module StringIntCache = Cache.Make(String)(Int)
- *)
-(*
+(*These use alternative implementation utilizng a class to re-use code. These are
+  not wrapped in a version struct.*)
 module Bytes_class_cache = Cache_classes.Make(Bytes_pb_capable)(Bytes_pb_capable)
 module BytesBool_class_cache = Cache_classes.Make(Bytes_pb_capable)(Bool_pb_capable)
 module BytesInt_class_cache = Cache_classes.Make(Bytes_pb_capable)(Int_pb_capable)
 module IntBytes_class_cache = Cache_classes.Make(Int_pb_capable)(Bytes_pb_capable)
 module IntBool_class_cache = Cache_classes.Make(Int_pb_capable)(Bool_pb_capable)
- *)
 module String_class_cache = Cache_classes.Make(String_pb_capable)(String_pb_capable)
-(*module StringBool_class_cache = Cache_classes.Make(String_pb_capable)(Bool_pb_capable)
+module StringBool_class_cache = Cache_classes.Make(String_pb_capable)(Bool_pb_capable)
 module StringInt_class_cache = Cache_classes.Make(String_pb_capable)(Int_pb_capable)
-
+(*These use alternative implementation utilizng the same class as above, re-using code. These ARE 
+  wrapped in a version struct.*)
 module Bytes_class_versioned_cache = Cache_classes.Make(Bytes_pb_capable_versioned)(Bytes_pb_capable_versioned)
 module BytesBool_class_versioned_cache = Cache_classes.Make(Bytes_pb_capable_versioned)(Bool_pb_capable_versioned)
 module BytesInt_class_versioned_cache = Cache_classes.Make(Bytes_pb_capable_versioned)(Int_pb_capable_versioned)
 module IntBytes_class_versioned_cache = Cache_classes.Make(Int_pb_capable_versioned)(Bytes_pb_capable_versioned)
 module IntBool_class_versioned_cache = Cache_classes.Make(Int_pb_capable_versioned)(Bool_pb_capable_versioned)
- *)
 module String_class_versioned_cache = Cache_classes.Make(String_pb_capable_versioned)(String_pb_capable_versioned)
-(*
 module StringBool_class_versioned_cache = Cache_classes.Make(String_pb_capable_versioned)(Bool_pb_capable_versioned)
 module StringInt_class_versioned_cache = Cache_classes.Make(String_pb_capable_versioned)(Int_pb_capable_versioned)
- *)
+(*==TODO==Offer json capable modules with and without version struct.*)
+module String_jsonclass_cache = Cache_classes.Make(String_json_capable)(String_json_capable)
+module String_jsonclass_versioned_cache = Cache_classes.Make(String_json_capable_versioned)(String_json_capable_versioned)
