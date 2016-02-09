@@ -2,10 +2,10 @@ module Result = Core.Std.Result
 module Option = Core.Std.Option
 module Lwt = Lwt
 open Lwt
-module Bytes = Protobuf_capables.Bytes
-module String = Protobuf_capables.String
-module Bool = Protobuf_capables.Bool
-module Int = Protobuf_capables.Int
+module Bytes = Bytes
+module String = String
+module Bool = Core.Std.Bool
+module Int = Core.Std.Int
 module Default_usermeta = String
 module Default_usermeta_Sc : sig
   type t = Default_usermeta.t

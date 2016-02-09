@@ -1,8 +1,8 @@
 module Result = Core.Std.Result
 module Option = Core.Std.Option
 module Lwt = Lwt
-module String = Protobuf_capables.String
-module Int = Protobuf_capables.Int
+module String = String
+module Int = Core.Std.Int
 module Default_usermeta = String
 module Default_index : sig
   type t =

@@ -7,6 +7,5 @@ module Robj = Robj
 (*module type Key = sig include Protobuf_capable.S end
 module type Value = sig include Protobuf_capable.S end*)
 module Serializables = Serializables
-module Cache = Cache
-module Cache_classes = Cache_classes
+module Lwt_Cache_Classes = Lwt_cache_classes
 module Lwt_Cache = Lwt_cache

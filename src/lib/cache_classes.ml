@@ -4,10 +4,10 @@ module Result = Core.Std.Result
 module Option = Core.Std.Option
 module Deferred = Async.Std.Deferred
 
-module Bytes = Protobuf_capables.Bytes
-module String = Protobuf_capables.String
-module Bool = Protobuf_capables.Bool
-module Int = Protobuf_capables.Int
+module Bytes = Bytes
+module String = String
+module Bool = Core.Std.Bool
+module Int = Core.Std.Int
 module Default_usermeta = String
 module Default_usermeta_Sc : sig
   type t = Default_usermeta.t
@@ -55,7 +55,6 @@ module type Sc =
         val set_tag : string option -> t -> t
         val to_unsafe : t -> Unsafe_Robj.Link.t
         val from_unsafe : Unsafe_Robj.Link.t -> t
-						  (*val show : t -> string*)
       end
       module type Unsafe_Pair =
         sig
@@ -144,7 +143,6 @@ module type Sc =
         val set_last_mod_usec : Int32.t option -> t -> t
         val set_usermeta : Usermeta.t list -> t -> t
         val set_indices : Index.t list -> t -> t
-						 (*val show : t -> string*)
       end
       type 'a t = {
         contents : Content.t list;
@@ -163,7 +161,6 @@ module type Sc =
       val set_vclock : string option -> 'a t -> 'b t
       val to_unsafe : 'a t -> [ `No_siblings ] Unsafe_Robj.t
       val from_unsafe : 'a Unsafe_Robj.t -> 'b t
-					       (*val show : 'a t -> string*)
     end
     val create : conn:conn -> bucket:string -> t
     val list_keys_stream :
@@ -299,14 +296,6 @@ module Make_with_usermeta_index
 	  let key = Option.map (Unsafe_Robj.Link.key t) deserialize_key in
 	  let bucket = Unsafe_Robj.Link.bucket t in
 	  let tag = Unsafe_Robj.Link.tag t in {bucket;key;tag}
-(*
-	let show t =
-	  let bckt = Core.Std.Option.value t.bucket ~default:"None" in
-	  let ky = match t.key with
-	    | Some k -> Key.show k
-	    | None -> "None" in
-	  let tg = Core.Std.Option.value t.tag ~default:"None" in
-	  "Link:Bucket:" ^ bckt ^ " Key:" ^ ky ^ " Tag:" ^ tg;;*)
       end
  
     module type Unsafe_Pair = sig
@@ -330,20 +319,10 @@ module Make_with_usermeta_index
 
       let to_unsafe (t:t) : Unsafe.t = 
 	let key = serialize_key (key t) in
-	(*
-	let tnow = Core.Std.Time.now () in
-	let ts = Core.Std.Time.to_string_abs ~zone:(Core.Std.Time.Zone.of_utc_offset 0) tnow in
-	let _ = print_string (ts ^ "cache.ml::to_unsafe() index 315 about to serialize_proto\n") in
-	*)
 	let value = Option.map (value t) (V.to_encoding) in
 	{ Unsafe.key; Unsafe.value}
 
       let from_unsafe (t:Unsafe.t) : t =
-	(*
-	let tnow = Core.Std.Time.now () in
-	let ts = Core.Std.Time.to_string_abs ~zone:(Core.Std.Time.Zone.of_utc_offset 0) tnow in
-	let _ = print_string (ts ^ "cache.ml::from_unsafe() index 320 about to deserialize_proto\n") in
-	*)
 	let value = Option.map (Unsafe.value t) (V.from_encoding) in
 	let key = deserialize_key (Unsafe.key t) in {key;value}
     end
@@ -389,11 +368,6 @@ module Make_with_usermeta_index
 		      deleted=None}
 
       let to_unsafe (t:t) : Unsafe_Robj.Content.t =
-	(*let getoptint = (fun x -> match x with Some i -> i | None -> Int32.zero) in
-	let tnow = Core.Std.Time.now () in
-	let ts = Core.Std.Time.to_string_abs ~zone:(Core.Std.Time.Zone.of_utc_offset 0) tnow in
-	let _ = print_string (ts ^ "to_unsafe index 373...") in
-	let _ = print_string ("last_mod:" ^ (Int32.to_string (getoptint t.last_mod)) ^ "\n") in*)
         let module C = Unsafe_Robj.Content in 
         let open C in 
         create (serialize_value t.value) |>
@@ -408,15 +382,8 @@ module Make_with_usermeta_index
         set_indices (List.map Index.to_unsafe t.indices)
 
       let from_unsafe (content:Unsafe_Robj.Content.t) =
-	(*let getoptint = (fun x -> match x with Some i -> i | None -> Int32.zero) in
-	let tnow = Core.Std.Time.now () in
-	let ts = Core.Std.Time.to_string_abs ~zone:(Core.Std.Time.Zone.of_utc_offset 0) tnow in
-	let _ = print_string (ts ^ "from_unsafe index 391...") in *)
 	let module C = Unsafe_Robj.Content in
 	let v = deserialize_value (C.value content) in
-	(*let _ = print_string (ts ^ "last_mod:") in
-	let _ = print_string (Int32.to_string (getoptint (C.last_mod content))) in
-	let _ = print_string "\n" in*)
 	{(create v) with 
           content_type = C.content_type content; 
           charset = C.charset content;
@@ -429,7 +396,6 @@ module Make_with_usermeta_index
           indices = List.map Index.from_unsafe (C.indices content);
           deleted = if (C.deleted content) then Some true else None}
 
-
       let set_value v t             = { t with value = v }
       let set_content_type ct t     = { t with content_type = ct }
       let set_charset cs t          = { t with charset = cs }
@@ -440,28 +406,6 @@ module Make_with_usermeta_index
       let set_last_mod_usec lmu t   = { t with last_mod_usec = lmu }
       let set_usermeta u t          = { t with usermeta = u }
       let set_indices i t           = { t with indices = i }
-(*
-      let show t =
-	let rec helper l acc showfunc =
-	  match l with
-	  | [] -> acc
-	  | h::t -> helper t ((showfunc h) ^ acc) showfunc in
-	let lastmod = match (last_mod t) with
-	  | Some lm ->  Int32.to_string lm
-	  | None -> "None" in
-	let lastmodusec = match (last_mod_usec t) with
-	  | Some lmu -> Int32.to_string lmu
-	  | None -> "None" in
-	"==ROBJ:CONTENT:Value: " ^ (Value.show (value t)) ^
-	  " ContentType:" ^ (Core.Std.Option.value (content_type t) ~default:"None") ^
-	    " Charset:" ^ (Core.Std.Option.value (charset t) ~default:"None") ^
-	      " ContentEncoding:" ^ (Core.Std.Option.value (content_encoding t) ~default:"None") ^
-		" Vtag:" ^ (Core.Std.Option.value (vtag t) ~default:"None") ^
-		  " Links(list):" ^ (helper (links t) "" Link.show) ^
-		    " LastMod:" ^ lastmod ^ " LastModUsed:" ^ lastmodusec ^
-		      (*" Usermeta:" ^ (usermeta t) ^ " Indices:" ^ (indices t)*)
-		      " Deleted:" ^ (Core.Std.Bool.to_string (deleted t)) ^ "==";;
-*)
     end
 
     type 'a t = { contents  : Content.t list
@@ -483,7 +427,6 @@ module Make_with_usermeta_index
       ; unchanged = false
       }
 	
-	
     let contents t        = t.contents
     let content t         = Core.Std.List.hd_exn (t.contents)
     let vclock t          = t.vclock
@@ -500,16 +443,6 @@ module Make_with_usermeta_index
     let from_unsafe t = 
       let contents = List.map Content.from_unsafe (Unsafe_Robj.contents t) in
       set_vclock (Unsafe_Robj.vclock t) (create_siblings contents)
-(*		 
-    let show t =
-      let rec helper cl acc =
-	match cl with
-	| [] -> acc
-	| h::t -> helper t (Content.show h ^ " | " ^ acc) in
-      "ROBJ:Unchanged: " ^ (Core.Std.Bool.to_string t.unchanged) ^
-	" vclock: " ^ (Core.Std.Option.value t.vclock ~default:"None") ^
-	  " contents_list: " ^ (helper t.contents "");;
- *)
   end
 		  
   let create ~conn ~bucket = {conn;bucket}
@@ -521,18 +454,12 @@ module Make_with_usermeta_index
   let with_cache ~host ~port ~bucket f =
     Conn.with_conn host port (fun conn -> (f (create ~conn ~bucket)))
 		   
-(*Key.of_string (Protobuf_capable.encode_decode b)) keys)*)
-  (*let d = Protobuf.Decoder.of_bytes (Bytes.of_string b) in*)
-  (*Key.from_protobuf (Protobuf.Decoder.of_string (Protobuf_capable.encode_decode b))) keys)*)
   let list_keys cache =
     Conn.list_keys cache.conn cache.bucket
     >>| function
       | Result.Ok keys ->
          Result.Ok (List.map (fun (b:string) ->
-			      let dsk = deserialize_key b in
-			      (*let _ = print_string ("cache.ml::list_keys dsk:" ^ (Key.show dsk) ^
-					      " from " ^ (Log.hex_of_string b) ^ "\n")*)
-			      dsk) keys)
+			      let dsk = deserialize_key b in dsk) keys)
       | Result.Error err ->
          Result.Error err
 
