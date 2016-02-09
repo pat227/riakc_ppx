@@ -135,3 +135,90 @@ module String_json_capable_versioned =
     let to_encoding v = sc#to_encoding v
   end
 
+module Bytes_json_capable =
+  struct
+    include Bytes
+    type bytes_t = bytes [@@deriving yojson]
+    let to_yojson = bytes_t_to_yojson
+    let from_yojson = bytes_t_of_yojson
+    let sc = new serializable_from_json_capable from_yojson to_yojson
+    let from_encoding (b:string) = sc#from_encoding b
+    let to_encoding v = sc#to_encoding v
+  end
+
+module Bytes_json_capable_versioned =
+  struct
+    include Bytes
+    type bytes_t = bytes [@@deriving yojson]
+    let to_yojson = bytes_t_to_yojson
+    let from_yojson = bytes_t_of_yojson
+    let sc = new serializable_from_json_capable_version_wrapped from_yojson to_yojson
+    let from_encoding (b:string) = sc#from_encoding b
+    let to_encoding v = sc#to_encoding v
+end
+
+module Bool_yojson_capable =
+  struct
+    include Core.Std.Bool
+    type bool_t = bool [@@deriving yojson]
+    let to_yojson = bool_t_to_yojson
+    let from_yojson = bool_t_of_yojson
+    let sc = new serializable_from_json_capable from_yojson to_yojson
+    let from_encoding (b:string) = sc#from_encoding b
+    let to_encoding v = sc#to_encoding v
+  end
+
+module Bool_yojson_capable_versioned =
+  struct
+    include Core.Std.Bool
+    type bool_t = bool [@@deriving yojson]
+    let to_yojson = bool_t_to_yojson
+    let from_yojson = bool_t_of_yojson
+    let sc = new serializable_from_json_capable_version_wrapped from_yojson to_yojson
+    let from_encoding (b:string) = sc#from_encoding b
+    let to_encoding v = sc#to_encoding v
+  end
+
+module Int_json_capable =
+  struct
+    include Core.Std.Int
+    type int_t = int [@@deriving yojson]
+    let to_yojson = int_t_to_yojson
+    let from_yojson = int_t_of_yojson
+    let sc = new serializable_from_json_capable from_yojson to_yojson
+    let from_encoding (b:string) = sc#from_encoding b
+    let to_encoding v = sc#to_encoding v
+  end
+
+module Int_json_capable_versioned =
+  struct
+    include Core.Std.Int
+    type int_t = int [@@deriving yojson]
+    let to_yojson = int_t_to_yojson
+    let from_yojson = int_t_of_yojson
+    let sc = new serializable_from_json_capable_version_wrapped from_yojson to_yojson
+    let from_encoding (b:string) = sc#from_encoding b
+    let to_encoding v = sc#to_encoding v
+  end
+    
+module Float_json_capable =
+  struct
+    include Core.Std.Float
+    type float_t = float [@@deriving yojson]
+    let to_yojson = float_t_to_yojson
+    let from_yojson = float_t_of_yojson
+    let sc = new serializable_from_json_capable from_yojson to_yojson
+    let from_encoding (b:string) = sc#from_encoding b
+    let to_encoding v = sc#to_encoding v
+  end
+
+module Float_json_capable_versioned =
+  struct
+    include Core.Std.Float
+    type float_t = float [@@deriving yojson]
+    let to_yojson = float_t_to_yojson
+    let from_yojson = float_t_of_yojson
+    let sc = new serializable_from_json_capable_version_wrapped from_yojson to_yojson
+    let from_encoding (b:string) = sc#from_encoding b
+    let to_encoding v = sc#to_encoding v
+  end

@@ -8,7 +8,6 @@ open Deferred.Result.Monad_infix
 
 module State = struct
   type t = unit
-
   let create () = ()
 end
 

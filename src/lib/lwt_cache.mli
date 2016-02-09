@@ -12,8 +12,8 @@ module Default_index : sig
     | Unknown of string
   val from_protobuf : Protobuf.Decoder.t -> t
   val to_protobuf : t -> Protobuf.Encoder.t -> unit
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
+  (*val pp : Format.formatter -> t -> unit
+  val show : t -> string*)
 end
 
 

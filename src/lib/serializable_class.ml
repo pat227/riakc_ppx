@@ -5,13 +5,14 @@ open Yojson
 (*In order to avoid using a functor elsewhere, this class
 accepts any module with from/to protobuf functions that
 operate on Encoders/Decoders and duplicates some code to provide
-the from_encoding and to_encoding functions.*)
+the from_encoding and to_encoding functions. Added json support
+since then.*)
 module Serializable_class = struct
   class ['a] serializable_from_pb_capable frompb topb = object
     method from_encoding (b:string) : 'a =
       let d = Protobuf.Decoder.of_string b in
       frompb d
-	     
+
     method to_encoding (v:'a) : string =
       let e = Protobuf.Encoder.create () in 
       topb v e;

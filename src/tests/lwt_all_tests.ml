@@ -5,7 +5,6 @@ module Rconn = Lwt_riakc.Lwt_Conn
 module Robj  = Lwt_riakc.Robj
 module State = struct
   type t = unit
-
   let create () = ()
 end
 

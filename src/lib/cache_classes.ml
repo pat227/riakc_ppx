@@ -330,16 +330,20 @@ module Make_with_usermeta_index
 
       let to_unsafe (t:t) : Unsafe.t = 
 	let key = serialize_key (key t) in
+	(*
 	let tnow = Core.Std.Time.now () in
 	let ts = Core.Std.Time.to_string_abs ~zone:(Core.Std.Time.Zone.of_utc_offset 0) tnow in
 	let _ = print_string (ts ^ "cache.ml::to_unsafe() index 315 about to serialize_proto\n") in
+	*)
 	let value = Option.map (value t) (V.to_encoding) in
 	{ Unsafe.key; Unsafe.value}
 
       let from_unsafe (t:Unsafe.t) : t =
+	(*
 	let tnow = Core.Std.Time.now () in
 	let ts = Core.Std.Time.to_string_abs ~zone:(Core.Std.Time.Zone.of_utc_offset 0) tnow in
 	let _ = print_string (ts ^ "cache.ml::from_unsafe() index 320 about to deserialize_proto\n") in
+	*)
 	let value = Option.map (Unsafe.value t) (V.from_encoding) in
 	let key = deserialize_key (Unsafe.key t) in {key;value}
     end
@@ -373,7 +377,6 @@ module Make_with_usermeta_index
       let indices t          = t.indices
       let deleted t          = match t.deleted with Some x -> x | None -> false
 
-
       let create v = {value = v; 
 		      content_type=None;
 		      charset=None;
@@ -386,11 +389,11 @@ module Make_with_usermeta_index
 		      deleted=None}
 
       let to_unsafe (t:t) : Unsafe_Robj.Content.t =
-	let getoptint = (fun x -> match x with Some i -> i | None -> Int32.zero) in
+	(*let getoptint = (fun x -> match x with Some i -> i | None -> Int32.zero) in
 	let tnow = Core.Std.Time.now () in
 	let ts = Core.Std.Time.to_string_abs ~zone:(Core.Std.Time.Zone.of_utc_offset 0) tnow in
 	let _ = print_string (ts ^ "to_unsafe index 373...") in
-	let _ = print_string ("last_mod:" ^ (Int32.to_string (getoptint t.last_mod)) ^ "\n") in
+	let _ = print_string ("last_mod:" ^ (Int32.to_string (getoptint t.last_mod)) ^ "\n") in*)
         let module C = Unsafe_Robj.Content in 
         let open C in 
         create (serialize_value t.value) |>
@@ -405,15 +408,15 @@ module Make_with_usermeta_index
         set_indices (List.map Index.to_unsafe t.indices)
 
       let from_unsafe (content:Unsafe_Robj.Content.t) =
-	let getoptint = (fun x -> match x with Some i -> i | None -> Int32.zero) in
+	(*let getoptint = (fun x -> match x with Some i -> i | None -> Int32.zero) in
 	let tnow = Core.Std.Time.now () in
 	let ts = Core.Std.Time.to_string_abs ~zone:(Core.Std.Time.Zone.of_utc_offset 0) tnow in
-	let _ = print_string (ts ^ "from_unsafe index 391...") in 
+	let _ = print_string (ts ^ "from_unsafe index 391...") in *)
 	let module C = Unsafe_Robj.Content in
 	let v = deserialize_value (C.value content) in
-	let _ = print_string (ts ^ "last_mod:") in
+	(*let _ = print_string (ts ^ "last_mod:") in
 	let _ = print_string (Int32.to_string (getoptint (C.last_mod content))) in
-	let _ = print_string "\n" in
+	let _ = print_string "\n" in*)
 	{(create v) with 
           content_type = C.content_type content; 
           charset = C.charset content;
