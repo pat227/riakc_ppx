@@ -2,8 +2,8 @@ module Result = Core.Std.Result
 module Option = Core.Std.Option
 module Lwt = Lwt
 module String = String
-module Int = Core.Std.Int
-module Default_usermeta = String
+module Int = Protobuf_capables.Int
+module Default_usermeta = Protobuf_capables.String
 module Default_index : sig
   type t =
       String of string
@@ -204,19 +204,6 @@ module type S =
         Lwt.t
     val bucket_props : t -> (Response.Props.t, [> Lwt_conn.error | Response.error ]) Result.t Lwt.t
   end
-
-module Make_with_usermeta_index_raw_key :
-functor
-  (Key : Protobuf_capable.S)
-    (Value : Protobuf_capable.S)
-    (Usermeta_value : Protobuf_capable.S)
-    (Index_value : Protobuf_capable.S) -> S
-  with
-    type Key.t = Key.t and 
-    type Value.t = Value.t and 
-    type Usermeta_value.t = Usermeta_value.t and
-    type Index_value.t = Index_value.t
-
     
 module Make_with_usermeta_index :
 functor
@@ -244,14 +231,3 @@ module type of Make_with_usermeta_index(Key)(Value)(Default_usermeta)(Index_valu
 module Make :
 functor (Key : Protobuf_capable.S) (Value : Protobuf_capable.S) 
 	-> module type of Make_with_usermeta(Key)(Value)(Default_usermeta)
-
-module Make_with_string_key :
-functor (Value : Protobuf_capable.S) ->
-module type of Make_with_usermeta_index_raw_key
-		 (Protobuf_capables.RawString_Key)
-		 (Value)(Default_usermeta)(Default_index)
-(*
-module Make :
-functor (Key : Protobuf_capable.S) (Value : Protobuf_capable.S) -> 
-  module type of Make_with_usermeta(Key)(Value)(Default_usermeta)
- *)

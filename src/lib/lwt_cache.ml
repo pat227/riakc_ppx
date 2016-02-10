@@ -4,9 +4,9 @@ module Lwt = Lwt
 open Lwt
 module Bytes = Bytes
 module String = String
-module Bool = Core.Std.Bool
-module Int = Core.Std.Int
-module Default_usermeta = String
+module Bool = Protobuf_capables.Bool
+module Int = Protobuf_capables.Int
+module Default_usermeta = Protobuf_capables.String
 module Default_usermeta_Sc : sig
   type t = Default_usermeta.t
   val to_encoding : t -> string
@@ -239,7 +239,7 @@ module type S =
         Result.t Lwt.t
   end
 
-module Make_with_usermeta_index_raw_key
+module Make_with_usermeta_index
 	 (Key:Protobuf_capable.S)
 	 (Value:Protobuf_capable.S) 
 	 (Usermeta_value: Protobuf_capable.S) 
@@ -533,25 +533,19 @@ module Make_with_usermeta_index_raw_key
   let bucket_props t = Lwt_conn.bucket_props (get_conn t) (get_bucket t)
 end
 
-(*module Conv = Protobuf_capable.Conversion.Make*)
-
-module Make_with_usermeta_index
+(*module Make_with_usermeta_index
  (Key:Protobuf_capable.S)
  (Value:Protobuf_capable.S) 
  (Usermeta_value: Protobuf_capable.S) 
  (Index_value:Protobuf_capable.S) = 
    Make_with_usermeta_index_raw_key(Key)(Value)(Usermeta_value)(Index_value)
-
+ *)
 module Make_with_usermeta(Key:Protobuf_capable.S) (Value:Protobuf_capable.S) (Usermeta_value:Protobuf_capable.S) =
   Make_with_usermeta_index(Key) (Value) (Usermeta_value) (Default_index)
 
 module Make_with_index(Key:Protobuf_capable.S)(Value:Protobuf_capable.S)(Index_value:Protobuf_capable.S) =
   Make_with_usermeta_index(Key)(Value) (Default_usermeta) (Index_value)
 
-module Make_with_string_key(Value:Protobuf_capable.S) =
-  Make_with_usermeta_index_raw_key(Protobuf_capables.RawString_Key)
-  (Value) (Default_usermeta) (Default_index)
-
 module Make(Key:Protobuf_capable.S) (Value:Protobuf_capable.S) =
-  Make_with_usermeta_index_raw_key(Key) (Value) (Default_usermeta) (Default_index)
+  Make_with_usermeta_index(Key) (Value) (Default_usermeta) (Default_index)
 

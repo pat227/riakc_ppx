@@ -157,7 +157,7 @@ module Bytes_json_capable_versioned =
     let to_encoding v = sc#to_encoding v
 end
 
-module Bool_yojson_capable =
+module Bool_json_capable =
   struct
     include Core.Std.Bool
     type bool_t = bool [@@deriving yojson]
@@ -168,7 +168,7 @@ module Bool_yojson_capable =
     let to_encoding v = sc#to_encoding v
   end
 
-module Bool_yojson_capable_versioned =
+module Bool_json_capable_versioned =
   struct
     include Core.Std.Bool
     type bool_t = bool [@@deriving yojson]
