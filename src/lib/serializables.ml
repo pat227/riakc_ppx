@@ -9,11 +9,21 @@ open Serializable_class
  the added functions, namely from/to_protobuf and from/to_encoding
  which are built atop from/to_protobuf.*)
 
-module String_pb_capable = 
+module String_raw = 
   struct
-    include String
+    include String (*Note here we use .of_bytes instead of .bytes to store strings plainly w/o protobuf overhead, ie raw string.*)
     let to_protobuf t e = Protobuf.Encoder.of_bytes e (Bytes.of_string t)
     let from_protobuf d = Bytes.to_string (Protobuf.Decoder.to_bytes d ())
+    let sc = new serializable_from_pb_capable from_protobuf to_protobuf
+    let from_encoding (b:string) = sc#from_encoding b
+    let to_encoding v = sc#to_encoding v
+  end
+
+module String_pb_capable = 
+  struct
+    include String 
+    let to_protobuf t e = Protobuf.Encoder.bytes (Bytes.of_string t) e
+    let from_protobuf d = Bytes.to_string (Protobuf.Decoder.bytes d)
     let sc = new serializable_from_pb_capable from_protobuf to_protobuf
     let from_encoding (b:string) = sc#from_encoding b
     let to_encoding v = sc#to_encoding v
@@ -22,8 +32,8 @@ module String_pb_capable =
 module String_pb_capable_versioned = 
   struct
     include String
-    let to_protobuf t e = Protobuf.Encoder.of_bytes e (Bytes.of_string t)
-    let from_protobuf d = Bytes.to_string (Protobuf.Decoder.to_bytes d ())
+    let to_protobuf t e = Protobuf.Encoder.bytes (Bytes.of_string t) e
+    let from_protobuf d = Bytes.to_string (Protobuf.Decoder.bytes d)
     let sc = new protobuf_capable_class_version_wrapped from_protobuf to_protobuf
     let from_encoding (b:string) = sc#from_encoding b
     let to_encoding v = sc#to_encoding v
