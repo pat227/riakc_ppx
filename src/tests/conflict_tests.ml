@@ -8,7 +8,7 @@ open Deferred.Result.Monad_infix
 
 module String = Cache.String
 (*module StringCache = Caches.StringCache*)
-module StrCache = Caches.RawStringKeyCache 
+module StrCache = Caches.String_rawkey_class_cache
 (*module StringCache = Caches.StringPrimitiveCache;;*)
 module State = struct
   type t = unit

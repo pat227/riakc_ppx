@@ -14,7 +14,7 @@ end
 (*module String = Protobuf_capables.String*)
 module String = Serializables.String_raw
 (*module StringCache = Caches.StringCache*)
-module StringCache = Caches.String_class_cache
+module StringCache = Caches.String_rawkey_class_cache
 (*module Protobuf_capable = Protobuf_capable*)
 module Rand = struct
   let lowercase = "abcdefghijklmnopqrstuvwxyz"
