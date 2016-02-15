@@ -29,7 +29,8 @@ LIB_PACKAGES = core lwt async async_unix yojson ppx_deriving ppx_deriving_protob
 
 EXAMPLES[] =
   $(removesuffix $(basename $(ls src/examples/*.ml)))
-
+TESTS[] =
+  $(removesuffix $(basename $(ls src/tests/*.ml)))
 
 ################################################################################
 # Directory and File Names
@@ -115,6 +116,8 @@ OCAMLPACKS[] = $(LIB_PACKAGES)
     OCAML_LIBS = ../lib/$(LIB_NAME)
     OCAMLINCLUDES += $(dir ../lib)
 
+#    foreach (test => ..., $(TESTS))
+#        .DEFAULT: $(OCamlProgram $(test), $(test))
     .DEFAULT: $(OCamlProgram all_tests, all_tests)
 
 

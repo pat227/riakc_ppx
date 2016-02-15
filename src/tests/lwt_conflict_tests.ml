@@ -1,9 +1,10 @@
 open Core.Std
 open Lwt
+open Lwt_riakc
 module Unix = Core.Std.Unix
-module Rconn = Riakc.Conn
-module String = Cache.String
-module StrCache = Caches.RawStringKeyCache 
+module Rconn = Lwt_conn
+module String = Lwt_riakc.Lwt_Cache.String
+module StringCache = Lwt_cache.Make(Protobuf_capables.String)(Protobuf_capables.String)
 module State = struct
   type t = unit
 
@@ -85,33 +86,35 @@ let recordt_of_pb pb =
   Protobuf.Decoder.of_string pb |> Conflicted.recordt_from_protobuf;;
 
 let exec_update c updated_robj =
-  let module R = StrCache.Robj in
-  let open Opts.Put in 
+  let module R = StringCache.Robj in
+  let open Opts.Put in
+  let open Lwt_cache.Option in
   let opts = [Bucket_type "siblings_allowed"] in
-  StrCache.put c ~opts ~k:testkey updated_robj >>|
+  StringCache.put c ~opts ~k:testkey updated_robj >|=
     (fun x -> match x with
-		(robj, (Some key)) -> ()
-	      | (robj, None) -> ())
+	      | Ok (robj, Some key) -> ()
+	      | Ok (robj, None) -> ()
+	      | Error _ -> ())
       
 let exec_get c k =
   let open Opts.Get in
   let opts = [BucketType "siblings_allowed"] in
-  StrCache.get c ~opts k;;
+  StringCache.get c ~opts k;;
 
 let rec rlist_from_content_list accum contentlist =
-  let module R = StrCache.Robj in
+  let module R = StringCache.Robj in
   match contentlist with
     [] -> accum
   | h::t -> rlist_from_content_list ((recordt_of_pb (R.Content.value h))::accum) t
   
 let get_and_resolve_conflicts c =
-  let module R = StrCache.Robj in
-  let module C = StrCache.Robj.Content in
+  let module R = StringCache.Robj in
+  let module C = StringCache.Robj.Content in
   let open Opts.Get in
   let open Response in
   let open Conflicted in
   exec_get c testkey >>= function
-		       | robj -> (let _ = printf "\nResolving conflicts amongst siblings..." in
+		       | Ok robj -> (let _ = printf "\nResolving conflicts amongst siblings..." in
 				  let rcrdtlist = rlist_from_content_list [] (R.contents robj) in
 				  let resolved = resolve_conflicts rcrdtlist in
 				  let _ = printf "\nResolved with: field a:%s b:%d c:%s" resolved.a resolved.b (show_closedtype resolved.c) in				    
@@ -121,7 +124,8 @@ let get_and_resolve_conflicts c =
 				  let old_content_hd = R.content robj in
 				  let new_content = R.Content.set_value pb old_content_hd in
 				  let updated_robj = R.set_content new_content robj in
-				  exec_update c updated_robj);;
+				  exec_update c updated_robj)
+		       | Error _ -> failwith "get_and_resolve_conflicts failed";;
 (*
 			 | Core.Std.Result.Error `Notfound           -> printf "Not found"; ()
 			 | Core.Std.Result.Error `Bad_conn           -> printf "Bad_conn"; ()
@@ -137,7 +141,7 @@ let get_and_resolve_conflicts c =
 (*This works. Just needed to use Time.pause not Unix.sleep*)
 let resolve_test c =
   let open Opts.Put in
-  let module Robj = StrCache.Robj in
+  let module Robj = StringCache.Robj in
   let open Conflicted in
   let opts = [Bucket_type "siblings_allowed"] in 
   let r1 = { a="first"; b=1; c=Green } in
@@ -148,13 +152,15 @@ let resolve_test c =
   let robj2 = Robj.create (Robj.Content.create r2aspb) in
   let key = testkey in
   let span = Core.Std.Time.Span.of_int_sec 4 in 
-  StrCache.put c ~opts ~k:key robj >>=
+  StringCache.put c ~opts ~k:key robj >>=
     fun _ -> (let _ = printf "\nFirst put done..." in let _ = Core.Std.Time.pause span in Lwt.return(Ok ())) >>=
-    fun _ -> StrCache.put c ~opts ~k:key robj2 >>=
+    fun _ -> StringCache.put c ~opts ~k:key robj2 >>=
     fun _ -> (let _ = printf "\nSecond put done..." in  let _ = Core.Std.Time.pause span in Lwt.return(Ok ())) >>=
     fun _ -> let _ = printf "\nGetting key with siblings..." in get_and_resolve_conflicts c >>=
     fun _ -> exec_get c testkey >>=
-    fun robj -> (let rlist = Robj.contents robj in
+    fun  robjresult ->
+    match robjresult with
+    | Ok robj -> (let rlist = Robj.contents robj in
 		 if (List.length rlist > 1) then 
 		   (assert_cond "\nFailed to resolve conflict; siblings exist" (List.length rlist = 1))
 		 else
@@ -164,41 +170,42 @@ let resolve_test c =
 		    assert_cond
 		      "\nValue is wrong. Must have failed to resolve conflict or to put with vclock. Check db with curl."
 		      ((r.b = 21) && (r.c=Red))))
+    | Error _ -> failwith "resolve_test failed"
 
 (*Do 2 puts*)
 let resolve_test_firstput c =
   let open Opts.Put in
-  let module Robj = StrCache.Robj in
+  let module Robj = StringCache.Robj in
   let open Conflicted in
   let opts = [Bucket_type "siblings_allowed"] in 
   let r1 = { a="first"; b=1; c=Green } in
   let r1aspb = string_of_pb_encoded_r r1 in
   let robj = Robj.create (Robj.Content.create r1aspb) in
   let key = testkey in
-  StrCache.put c ~opts ~k:key robj >>=
+  StringCache.put c ~opts ~k:key robj >>=
     fun _ -> (let _ = printf "\nFirst put done..." in Core.Std.Unix.sleep 6; Lwt.return(Ok ()))
 
 let resolve_test_secondput c =
   let open Opts.Put in
-  let module Robj = StrCache.Robj in
+  let module Robj = StringCache.Robj in
   let open Conflicted in
   let opts = [Bucket_type "siblings_allowed"] in 
   let r2 = { a="second"; b=20; c=Red } in
   let r2aspb = string_of_pb_encoded_r r2 in
   let robj2 = Robj.create (Robj.Content.create r2aspb) in
   let key = testkey in
-  StrCache.put c ~opts ~k:key robj2 >>=
+  StringCache.put c ~opts ~k:key robj2 >>=
     fun _ -> (let _ = printf "\nSecond put done..." in Core.Std.Unix.sleep 6; Lwt.return(Ok ()))
 
 let get_resolve_put_test c =
-  let module R = StrCache.Robj in
-  let module C = StrCache.Robj.Content in
+  let module R = StringCache.Robj in
+  let module C = StringCache.Robj.Content in
   let open Opts.Get in
   let open Response in
   let open Conflicted in
   let option_to_string_vclock = Option.value ~default:"" in
   exec_get c testkey >>= function
-		       | robj -> (let _ = printf "\nResolving conflicts amongst siblings..." in
+		       | Ok robj -> (let _ = printf "\nResolving conflicts amongst siblings..." in
 				  let rcrdtlist = rlist_from_content_list [] (R.contents robj) in
 				  let thevclock = (R.vclock robj) in		  
 				  let _ = printf "\nFound %d siblings and robj vclock:%s " (List.length rcrdtlist) (option_to_string_vclock thevclock) in
@@ -212,7 +219,9 @@ let get_resolve_put_test c =
 				  let updated_robj = R.set_content new_content robj in
 				  exec_update c updated_robj) >>=
 				   fun _ -> exec_get c testkey >>=
-				   fun robj -> (let rlist = R.contents robj in
+				      (fun robjresult ->
+				      match robjresult with
+				      | Ok robj -> (let rlist = R.contents robj in
 						if (List.length rlist > 1) then 
 						  (assert_cond "\nFailed to resolve conflict; siblings exist" (List.length rlist = 1))
 						else
@@ -224,7 +233,9 @@ let get_resolve_put_test c =
 						     ((r.b = 21) && (r.c=Red) &&
 							((Core.Std.String.substr_index_exn r.a "first") >= 0) && (Core.Std.String.substr_index_exn r.a "second") >= 0)
 						  )
-					       )
+						   )
+				      | Error _ -> failwith "get_resolve_put_test failed")
+		       | Error _ -> failwith "get_resolve_put_test failed"
 	       
 (*==========Finally got this to work...======================*)
 let tests = [ ("resolve_test"           , resolve_test)]
@@ -240,7 +251,7 @@ let tests = [ ("resolve_test"           , resolve_test)]
 
 let execute_test t =
   let with_cache () =
-    StrCache.with_cache
+    StringCache.with_cache
       ~host:"127.0.0.1"
       ~port:8087
       ~bucket:"with_sibs"
@@ -249,7 +260,7 @@ let execute_test t =
   with_cache ()
 	     
 let rec execute_tests s = function
-  | [] -> Lwt.return (shutdown 0)
+  | [] -> Lwt.return ()
   | (name, t)::ts -> begin
 		     execute_test t >>= function
 				      | Ok () -> begin
@@ -266,6 +277,5 @@ let run_tests () =
   execute_tests (State.create ()) tests
 		
 let () =
-  ignore (run_tests ());
-  never_returns (Scheduler.go ())
+  Lwt_main.run (run_tests ());
 		

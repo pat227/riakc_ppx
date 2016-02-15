@@ -10,7 +10,7 @@ end
 
 module String = Lwt_riakc.Lwt_Cache.String
 (*module StringCache = Lwt_riakc.Lwt_Cache.StringCache*)
-module StringCache = Lwt_cache.Make(String)(String)
+module StringCache = Lwt_cache.Make(Protobuf_capables.String)(Protobuf_capables.String)
 
 module Rand = struct
   let lowercase = "abcdefghijklmnopqrstuvwxyz"
