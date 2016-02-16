@@ -8,8 +8,9 @@ module State = struct
   let create () = ()
 end
 
-module String = Serializables.String_raw
-module StringCache = Lwt_caches.String_rawkey_class_cache
+module String = Lwt_riakc.Lwt_Cache.String
+(*module StringCache = Lwt_riakc.Lwt_Cache.StringCache*)
+module StringCache = Lwt_cache.Make(Protobuf_capables.String)(Protobuf_capables.String)
 
 module Rand = struct
   let lowercase = "abcdefghijklmnopqrstuvwxyz"
