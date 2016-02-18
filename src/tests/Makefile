@@ -8,9 +8,9 @@ versioned_tests:	all_versioned_tests.ml
 conflict_tests:	conflict_tests.ml
 	ocamlfind ocamlc -g -principal conflict_tests.ml -linkpkg -thread -I ./ -package async,core,ppx_tools,ppx_deriving_protobuf,riakc_ppx
 #lwt.io is included via lwt.unix!
-lwt_old_tests:	lwt_all_tests.ml
-	ocamlfind ocamlc -g -principal lwt_all_old_tests.ml -linkpkg -thread -I ./ -package lwt,lwt.unix,core,ppx_tools,ppx_deriving_protobuf,riakc_ppx
-lwt_old_conflict_tests:	lwt_conflict_tests.ml
+lwt_old_tests:	lwt_old_all_tests.ml
+	ocamlfind ocamlc -g -principal lwt_old_all_tests.ml -linkpkg -thread -I ./ -package lwt,lwt.unix,core,ppx_tools,ppx_deriving_protobuf,riakc_ppx
+lwt_old_conflict_tests:	lwt_old_conflict_tests.ml
 	ocamlfind ocamlc -g -principal lwt_old_conflict_tests.ml -linkpkg -thread -I ./ -package lwt,lwt.unix,core,ppx_tools,ppx_deriving_protobuf,riakc_ppx
 lwt_tests:	lwt_all_tests.ml
 	ocamlfind ocamlc -g -principal lwt_all_tests.ml -linkpkg -thread -I ./ -package lwt,lwt.unix,core,ppx_tools,ppx_deriving_protobuf,riakc_ppx

@@ -4,7 +4,7 @@ open Lwt_riakc
 module Unix = Core.Std.Unix
 module Rconn = Lwt_conn
 module String = Lwt_riakc.Lwt_Cache.String
-module StringCache = Lwt_cache.Make(Protobuf_capables.String)(Protobuf_capables.String)
+module StringCache = Lwt_caches.Lwt_StringCache (*Lwt_cache.Make(Protobuf_capables.String)(Protobuf_capables.String)*)
 module State = struct
   type t = unit
 
