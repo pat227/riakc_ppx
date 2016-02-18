@@ -58,9 +58,10 @@ let list_keys_test c =
 			    | Ok(keys1) ->
 			       (let robj =
 				  StringCache.Robj.create
-				    (StringCache.Robj.Content.create "foobar")
+				    (StringCache.Robj.Content.create "lisk_keys_test")
 				in
-				StringCache.put c ~k:(Rand.key 10) robj >>= fun _ ->
+				let random_key = (Rand.key 10) in
+				StringCache.put c ~k: random_key robj >>= fun _ ->
 				StringCache.list_keys c >>= function
 							  | Ok(keys2) ->
 							     (assert_cond
@@ -69,7 +70,7 @@ let list_keys_test c =
 							      >>= fun _ ->
 							      assert_cond
 								"Key not in list"
-								(List.mem keys2 "foobar")
+								(List.mem keys2 random_key)
 							     )
 							  | Error err -> assert_cond "Failed to list keys index 74" false
 			       )
