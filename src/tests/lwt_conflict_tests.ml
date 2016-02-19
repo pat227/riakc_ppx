@@ -11,7 +11,7 @@ module State = struct
   let create () = ()
 end
 
-let testkey = "3May_B"
+let testkey = "18Feb16"
 
 (*Only need to be able to resolve any conflicts b/c right now cannot even do that.
   Conflict resolution here is meant to be done in client code, not by riak. The
@@ -254,7 +254,7 @@ let execute_test t =
     StringCache.with_cache
       ~host:"127.0.0.1"
       ~port:8087
-      ~bucket:"with_sibs"
+      ~bucket:"18Feb_0908"
       (fun cache -> t cache)
   in
   with_cache ()

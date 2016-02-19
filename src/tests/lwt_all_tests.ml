@@ -88,7 +88,7 @@ let get_notfound_test c =
 let get_found_test c =
   let robj =
     StringCache.Robj.create
-      (StringCache.Robj.Content.create "foobar")
+      (StringCache.Robj.Content.create "get_found_test")
   in
   let key = Rand.key 10 in
   StringCache.put c ~k:key robj >>= function
@@ -102,7 +102,7 @@ let put_return_body_test c =
   let module Robj = StringCache.Robj in
   let robj =
     Robj.create
-      (Robj.Content.create "foobar")
+      (Robj.Content.create "put_return_body_test")
   in
   let key = Rand.key 10 in
   StringCache.put c ~opts:[Return_body] ~k:key robj >>=
