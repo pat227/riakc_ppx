@@ -30,7 +30,7 @@ let read_payload r preamble =
 		      read_str r 0 resp_length payload
   | Error `Overflow | Error `Bad_payload | Error `Incomplete_payload |
   Error `Protobuf_encoder_error | Error `Unknown_type |
-  Error `Wrong_type | Error `Overflow -> Lwt.return(Error `Overflow)
+  Error `Wrong_type -> Lwt.return(Error `Overflow)
 
 let rec read_response r f acc =
   let preamble = Bytes.create 4 in
@@ -54,8 +54,7 @@ let do_request_stream t accum g f =
   Lwt.return (g ()) >>=
     function
     | Ok (request) ->
-       Lwt_io.write t.w request;
-       read_response t.r f accum
+       Lwt_io.write t.w request >>= (fun () -> read_response t.r f accum) 
     | Error _ -> Lwt.return(Error `Bad_conn) (*IMPOSSIBLE--see request.ml...cannot fail*)
 (*These alternatives are required; more closely resembles original version written under
 async. Support client code passing a pipe directly to these functions, upon which we 
@@ -82,8 +81,7 @@ let do_request_stream_side_effect_on_pipe t c g f =
   Lwt.return (g ()) >>=
     function
     | Ok (request) ->
-       Lwt_io.write t.w request;
-       read_response_write_it t.r f c
+       Lwt_io.write t.w request >>= (fun () -> read_response_write_it t.r f c)
     | Error _ -> Lwt.return(Error `Bad_conn) (*IMPOSSIBLE--see request.ml...cannot fail*)
 (*
 Appears async pipes delimit inputs internally by means of a queue? And lwt pipes

@@ -162,9 +162,9 @@ end
 let get payload =
   let open Result.Monad_infix in
   run '\x0A' payload Get.from_protobuf >>= fun (c, vclock, unchanged) ->
-  let t_ = (c, vclock, unchanged) in
+  (*let t_ = (c, vclock, unchanged) in
   let gs = Get.show t_ in
-  (*let tnow = Core.Std.Time.now () in
+  let tnow = Core.Std.Time.now () in
   let ts = Core.Std.Time.to_string_abs ~zone:(Core.Std.Time.Zone.of_utc_offset 0) tnow in
   let _ = print_string (ts ^ "response.ml:get:show:" ^ gs) in*)
   Result.Ok (Done (Robj.of_pb c vclock unchanged))

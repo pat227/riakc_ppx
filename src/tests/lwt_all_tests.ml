@@ -7,9 +7,9 @@ module State = struct
   type t = unit
   let create () = ()
 end
-
-module String = Serializables.String_raw
-module StringCache = Lwt_caches.String_rawkey_class_cache
+		 
+module String = Serializables.String_raw   (*String_json_capable*)
+module StringCache = Lwt_caches.String_rawkey_class_cache  (*String_rawkey_jsonclass*)
 
 module Rand = struct
   let lowercase = "abcdefghijklmnopqrstuvwxyz"
